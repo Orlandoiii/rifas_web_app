@@ -1,7 +1,7 @@
-import Demo from './Demo'
+import Landing from './pages/Landing'
 
 function App() {
-  return <Demo />
+  return <Landing />
 }
 
 export default App

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useEffect } from "react"
 
 type Theme = "dark" | "light" | "system"
 type SelectedColor = "coral" | "mint" | "electric" | "binance"
@@ -9,6 +10,7 @@ interface ThemeProviderProps {
   defaultSelectedColor?: SelectedColor
   storageKey?: string
   selectedColorKey?: string
+  forceDefaultSelectedColor?: boolean
 }
 
 interface ThemeProviderState {
@@ -20,7 +22,7 @@ interface ThemeProviderState {
 
 const initialState: ThemeProviderState = {
   theme: "system",
-  selectedColor: "coral",
+  selectedColor: "mint",
   setTheme: () => null,
   setSelectedColor: () => null,
 }
@@ -30,21 +32,37 @@ const ThemeProviderContext = React.createContext<ThemeProviderState>(initialStat
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  defaultSelectedColor = "coral",
+  defaultSelectedColor = "mint",
   storageKey = "ui-theme",
   selectedColorKey = "ui-selected-color",
+  forceDefaultSelectedColor = false,
   ...props
 }: ThemeProviderProps) {
+
   const [theme, setTheme] = React.useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   )
-  
+
   const [selectedColor, setSelectedColor] = React.useState<SelectedColor>(
     () => (localStorage.getItem(selectedColorKey) as SelectedColor) || defaultSelectedColor
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (forceDefaultSelectedColor) {
+      localStorage.setItem(selectedColorKey, defaultSelectedColor)
+      setSelectedColor(defaultSelectedColor)
+    }
+  
+  }, [])
+
+  useEffect(() => {
     const root = window.document.documentElement
+    try {
+      root.classList.add('theme-transition')
+      window.setTimeout(() => {
+        root.classList.remove('theme-transition')
+      }, 300)
+    } catch { }
 
     root.classList.remove("light", "dark")
 
@@ -62,8 +80,15 @@ export function ThemeProvider({
     }
   }, [theme])
 
-  React.useEffect(() => {
+  useEffect(() => {
     const root = window.document.documentElement
+    // Smooth transition hook
+    try {
+      root.classList.add('theme-transition')
+      window.setTimeout(() => {
+        root.classList.remove('theme-transition')
+      }, 300)
+    } catch { }
     root.setAttribute("data-selected", selectedColor)
   }, [selectedColor])
 

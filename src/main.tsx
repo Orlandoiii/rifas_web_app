@@ -7,7 +7,7 @@ import { LoadModalProvider } from './components/lib/components/modal'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider defaultTheme="system" defaultSelectedColor="coral">
+    <ThemeProvider defaultTheme="system" forceDefaultSelectedColor>
       <LoadModalProvider>
           <App />
       </LoadModalProvider>
