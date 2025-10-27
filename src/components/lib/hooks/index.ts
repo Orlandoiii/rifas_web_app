@@ -1,0 +1,1 @@
+export { useInputMask } from '../components/input/mask';
