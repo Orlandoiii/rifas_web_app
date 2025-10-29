@@ -42,6 +42,8 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   title?: string;
   showBackdrop?: boolean;
+  lockBodyScroll?: boolean;
+  closeOnBackdropClick?: boolean;
 }
 
 const modalSizes = {
@@ -84,7 +86,9 @@ function Modal({
   onClose,
   size = 'md',
   title,
-  showBackdrop = true
+  showBackdrop: _showBackdrop = true,
+  lockBodyScroll = true,
+  closeOnBackdropClick = true
 }: ModalProps) {
   const handleBackdropClick = () => {
     if (onClose) {
@@ -99,9 +103,10 @@ function Modal({
     >
       {open && (
         <Backdrop
-          onBackdropClick={showBackdrop ? handleBackdropClick : undefined}
+          onBackdropClick={closeOnBackdropClick ? handleBackdropClick : undefined}
           background="bg-black/50"
           zIndex={50}
+          lockBodyScroll={lockBodyScroll}
         >
           <motion.div
             variants={modalAnimation}
@@ -109,7 +114,7 @@ function Modal({
             animate="animate"
             exit="exit"
             className={`relative ${modalSizes[size]} 
-              min-h-[200px] max-h-[90vh] overflow-hidden
+              min-h-[200px]
               rounded-2xl bg-bg-secondary border border-border-light
               shadow-2xl shadow-black/30 backdrop-blur-sm
               flex flex-col`}

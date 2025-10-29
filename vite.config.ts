@@ -12,4 +12,13 @@ export default defineConfig({
     }),
     tailwindcss()
   ],
+  server: {
+    // Exponer en toda la LAN para depurar desde el teléfono
+    host: true, // equivalente a '0.0.0.0'
+    port: 5173,
+  },
+  preview: {
+    host: true,
+    port: 5173,
+  }
 })

@@ -157,6 +157,7 @@ utilities;
         font-style: normal;
         transition: background-color 0.3s ease, color 0.3s ease;
     }
+    html { -webkit-text-size-adjust: 100%; }
 }
 
 /* Smooth transitions when switching theme/color */
@@ -281,6 +282,17 @@ utilities;
     .border-selected {
         border-color: var(--color-selected);
     }
+    /* Ocultar spinners de inputs number cuando se usa la clase no-spinner */
+    input[type="number"].no-spinner {
+        appearance: textfield;
+        -moz-appearance: textfield;
+    }
+    input[type="number"].no-spinner::-webkit-outer-spin-button,
+    input[type="number"].no-spinner::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    .ios-zoom-fix { font-size: 16px !important; }
 }
 
 ::-webkit-scrollbar {

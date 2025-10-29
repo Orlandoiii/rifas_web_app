@@ -8,6 +8,7 @@ interface BackdropProps {
     background?: string;
     onBackdropClick?: () => void;
     zIndex?: number;
+    lockBodyScroll?: boolean;
 }
 
 const backDropAnimation = {
@@ -35,17 +36,21 @@ export default function Backdrop({
     outRef,
     background = "bg-bg-primary/30",
     onBackdropClick,
-    zIndex = 40
+    zIndex = 40,
+    lockBodyScroll = true
 }: BackdropProps) {
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
-
-        document.body.style.overflow = 'hidden';
+        if (lockBodyScroll) {
+            document.body.style.overflow = 'hidden';
+        }
 
         return () => {
-            document.body.style.overflow = 'unset';
+            if (lockBodyScroll) {
+                document.body.style.overflow = 'unset';
+            }
         };
     }, []);
 
@@ -67,7 +72,7 @@ export default function Backdrop({
             exit="exit"
             transition={{ ease: "easeInOut" as const }}
             ref={outRef}
-            className={`fixed inset-0 ${background} h-full w-full overflow-hidden overscroll-none flex justify-center items-center`}
+            className={`fixed inset-0 ${background} h-full w-full overflow-y-auto flex justify-center items-start py-6`}
             style={{ zIndex }}
             onClick={handleBackdropClick}
         >
