@@ -4,6 +4,7 @@ import { Button } from '../lib/components/button';
 import { Stepper } from '../lib/components/stepper';
 import type { Step } from '../lib/components/stepper';
 import UserDataForm from './UserDataForm';
+import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
 import { rafflesService } from '../../services/raffles';
 import type { RaffleDetail, RaffleNumber } from '../../types/raffles';
 
@@ -71,9 +72,15 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
         );
     };
 
-    // Stepper integration
-    type CheckoutData = { buyer: { id: string; name: string; phone: string; email: string } };
-    const [checkout, setCheckout] = React.useState<CheckoutData>({ buyer: { id: '', name: '', phone: '', email: '' } });
+    type CheckoutData = {
+        buyer: { id: string; name: string; phone: string; email: string };
+        payment?: SypagoDebitPayload;
+    };
+
+    const [checkout, setCheckout] = React.useState<CheckoutData>({
+        buyer: { id: '', name: '', phone: '', email: '' },
+        payment: undefined,
+    });
 
     const steps: Step<CheckoutData>[] = [
         {
@@ -180,6 +187,25 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
                     onChange={(buyer) => setData(prev => ({ ...prev, buyer }))}
                 />
             )
+        },
+        {
+            id: 'payment',
+            title: 'Pago',
+            render: ({ setData, goNext }) => (
+                <SypagoDebit
+                    raffleTitle={detail?.title || ''}
+                    selectedNumbers={selected}
+                    price={detail?.price || 0}
+                    currency={detail?.currency || 'USD'}
+                    onSubmit={(p) => { setData(prev => ({ ...prev, payment: p })); goNext(); }}
+                />
+            ),
+            validate: (d) => Boolean(
+                d.payment &&
+                d.payment.bankCode &&
+                d.payment.docNumber &&
+                ((d.payment.mode === 'phone' && d.payment.phone) || (d.payment.mode === 'account' && d.payment.account))
+            )
         }
     ];
 
@@ -189,8 +215,19 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
                 steps={steps}
                 data={checkout}
                 onDataChange={(u) => setCheckout(u)}
-                finishLabel="Continuar al pago"
-                onFinish={() => {}}
+                finishLabel="Pagar"
+                onFinish={() => { /* TODO: enviar pago */ }}
+                renderFooter={({ current, total, canNext, goBack, goNext }) => (
+                    current === total - 1
+                        ? null
+                        : (
+                            <div className="mt-6 flex items-center justify-between">
+                                <Button variant="secondary" onClick={goBack} disabled={current === 0}>Atrás</Button>
+                                <div className="flex-1" />
+                                <Button onClick={goNext} disabled={!canNext}>Continuar</Button>
+                            </div>
+                        )
+                )}
             />
         </Modal>
     );
