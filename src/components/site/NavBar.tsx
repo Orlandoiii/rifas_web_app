@@ -8,8 +8,30 @@ interface NavBarProps {
 // Subcomponentes locales
 function Logo() {
   return (
-    <div className="w-32 h-8 rounded bg-selected/20 border border-selected/30 text-selected flex items-center justify-center text-sm font-semibold">
-      LOGO
+    <div className="flex items-center justify-center">
+      <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <g fill="#00BD9C">
+          <circle cx="50" cy="25" r="18" />
+
+          <circle cx="75" cy="50" r="18" />
+
+          <circle cx="50" cy="75" r="18" />
+
+          <circle cx="25" cy="50" r="18" />
+
+          <circle cx="50" cy="50" r="12" />
+
+          <rect x="48" y="68" width="4" height="20" rx="2" />
+        </g>
+
+        <g fill="#00E6B8" opacity="0.3">
+          <ellipse cx="45" cy="20" rx="6" ry="4" />
+          <ellipse cx="70" cy="45" rx="4" ry="6" />
+          <ellipse cx="55" cy="70" rx="6" ry="4" />
+          <ellipse cx="30" cy="55" rx="4" ry="6" />
+        </g>
+      </svg>
+
     </div>
   );
 }

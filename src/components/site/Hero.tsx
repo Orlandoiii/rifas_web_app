@@ -88,10 +88,11 @@ function RaffleDetails({ raffle, timeLeft, onBuy }: { raffle: RaffleSummary; tim
 interface HeroProps {
   raffle: RaffleSummary | null;
   isLoading?: boolean;
+  isError?: boolean;
   onBuy: () => void;
 }
 
-export default function Hero({ raffle, isLoading = false, onBuy }: HeroProps) {
+export default function Hero({ raffle, isLoading = false, isError = false, onBuy }: HeroProps) {
   const { theme } = useTheme();
   const timeLeft = useCountdown(raffle?.endsAt);
   const resolvedTheme = useResolvedTheme(theme);
@@ -110,12 +111,22 @@ export default function Hero({ raffle, isLoading = false, onBuy }: HeroProps) {
         <HeroHeader />
 
         <div className="mt-8 md:mt-10 lg:mt-12 mx-auto max-w-4xl">
-          {isLoading || !raffle ? (
+          {isLoading ? (
             <div className="flex justify-center">
               <Loader size="md" />
             </div>
-          ) : (
+          ) : isError ? (
+            <div className="text-center py-8 bg-bg-secondary/80 border border-border-light rounded-2xl p-5 max-w-xl mx-auto">
+              <p className="text-text-secondary text-sm">Error al cargar las rifas.</p>
+              <p className="text-text-muted text-xs mt-1">Por favor, intenta recargar la página.</p>
+            </div>
+          ) : raffle ? (
             <RaffleDetails raffle={raffle} timeLeft={timeLeft} onBuy={onBuy} />
+          ) : (
+            <div className="text-center py-8 bg-bg-secondary/80 border border-border-light rounded-2xl p-5 max-w-xl mx-auto">
+              <p className="text-text-secondary text-sm">No hay rifas disponibles en este momento.</p>
+              <p className="text-text-muted text-xs mt-1">Vuelve pronto para ver nuevas rifas.</p>
+            </div>
           )}
         </div>
       </div>

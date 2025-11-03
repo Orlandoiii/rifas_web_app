@@ -7,7 +7,6 @@ export const QUERY_KEYS = {
   raffles: {
     all: ['raffles'] as const,
     list: () => [...QUERY_KEYS.raffles.all, 'list'] as const,
-    detail: (id: string) => [...QUERY_KEYS.raffles.all, 'detail', id] as const,
     soldTickets: (id: string) => [...QUERY_KEYS.raffles.all, 'soldTickets', id] as const,
   },
 };
@@ -47,29 +46,24 @@ export function useSoldTickets(raffleId: string | null) {
 
 /**
  * Hook para obtener el detalle completo de una rifa con sus tickets
- * Combina la información de la rifa con los tickets vendidos
+ * Toma la rifa de la lista cacheada y obtiene los tickets vendidos
+ * Solo genera tickets si la petición fue exitosa (200)
  */
-export function useRaffleDetail(id: string | null) {
-  const raffleQuery = useQuery({
-    queryKey: QUERY_KEYS.raffles.detail(id || ''),
-    queryFn: ({ signal }) => rafflesService.getRaffleDetail(id!, signal),
-    enabled: !!id,
-    staleTime: 1000 * 60 * 5, // 5 minutos
-  });
-
-  const soldTicketsQuery = useSoldTickets(id);
+export function useRaffleDetail(raffle: RaffleSummary | null) {
+  const soldTicketsQuery = useSoldTickets(raffle?.id || null);
 
   // Combinar los datos para crear el RaffleDetail completo
+  // Solo si NO hay error y tenemos data (incluso si es un array vacío)
   const detail: RaffleDetail | undefined = 
-    raffleQuery.data && soldTicketsQuery.data
-      ? buildRaffleDetail(raffleQuery.data, soldTicketsQuery.data)
+    raffle && !soldTicketsQuery.isError && soldTicketsQuery.data !== undefined
+      ? buildRaffleDetail(raffle, soldTicketsQuery.data)
       : undefined;
 
   return {
     data: detail,
-    isLoading: raffleQuery.isLoading || soldTicketsQuery.isLoading,
-    isError: raffleQuery.isError || soldTicketsQuery.isError,
-    error: raffleQuery.error || soldTicketsQuery.error,
+    isLoading: soldTicketsQuery.isLoading,
+    isError: soldTicketsQuery.isError,
+    error: soldTicketsQuery.error,
   };
 }
 

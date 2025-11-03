@@ -5,16 +5,13 @@ import RafflesCarousel from '../components/site/RafflesCarousel';
 import RaffleDetailModal from '../components/site/RaffleDetailModal';
 import Footer from '../components/site/Footer';
 import { useRaffles, getMainRaffle } from '../hooks';
+import type { RaffleSummary } from '../types/raffles';
 
 export default function Landing() {
-  const { data: raffles = [], isLoading } = useRaffles();
-  const [openDetailId, setOpenDetailId] = useState<string | null>(null);
+  const { data: raffles, isLoading, isError } = useRaffles();
+  const [selectedRaffle, setSelectedRaffle] = useState<RaffleSummary | null>(null);
 
-  const mainRaffle = useMemo(() => getMainRaffle(raffles), [raffles]);
-
-  const handleOpenDetail = (raffleId: string) => {
-    setOpenDetailId(raffleId);
-  };
+  const mainRaffle = useMemo(() => getMainRaffle(raffles || []), [raffles]);
 
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary">
@@ -22,14 +19,19 @@ export default function Landing() {
       <Hero 
         raffle={mainRaffle} 
         isLoading={isLoading}
-        onBuy={() => mainRaffle && handleOpenDetail(mainRaffle.id)} 
+        isError={isError}
+        onBuy={() => mainRaffle && setSelectedRaffle(mainRaffle)} 
       />
-      <RafflesCarousel raffles={raffles} />
+      <RafflesCarousel 
+        raffles={raffles || []} 
+        isLoading={isLoading}
+        isError={isError}
+      />
       <Footer />
       <RaffleDetailModal 
-        raffleId={openDetailId} 
-        open={!!openDetailId} 
-        onClose={() => setOpenDetailId(null)} 
+        raffle={selectedRaffle} 
+        open={!!selectedRaffle} 
+        onClose={() => setSelectedRaffle(null)} 
       />
     </div>
   );

@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react';
 import { motion, type PanInfo } from 'framer-motion';
+import { Loader } from '../lib/components/loader';
 import RaffleCard from './RaffleCard';
 import RaffleDetailModal from './RaffleDetailModal';
 import type { RaffleSummary } from '../../types/raffles';
 
 interface RafflesCarouselProps {
   raffles: RaffleSummary[];
+  isLoading?: boolean;
+  isError?: boolean;
 }
 
-export default function RafflesCarousel({ raffles }: RafflesCarouselProps) {
+export default function RafflesCarousel({ raffles, isLoading = false, isError = false }: RafflesCarouselProps) {
   const items = useMemo(() => raffles || [], [raffles]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [openDetail, setOpenDetail] = useState(false);
+  const [selectedRaffle, setSelectedRaffle] = useState<RaffleSummary | null>(null);
   const swipeThreshold = 50;
 
   const goPrev = () => setActiveIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
@@ -29,14 +32,26 @@ export default function RafflesCarousel({ raffles }: RafflesCarouselProps) {
   // Carrusel de un solo elemento en todas las resoluciones
   const enableCarousel = items.length >= 1;
 
-  // Simplified single-card carousel
-
-  if (!items.length) return null;
-
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 overflow-hidden">
       <h3 className="text-xl font-semibold mb-6">Rifas disponibles</h3>
-      <div className="relative w-full mx-auto touch-pan-y overflow-hidden">
+      
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader size="md" />
+        </div>
+      ) : isError ? (
+        <div className="text-center py-12 bg-bg-secondary border border-border-light rounded-xl p-6 max-w-xl mx-auto">
+          <p className="text-text-secondary text-sm">Error al cargar las rifas.</p>
+          <p className="text-text-muted text-xs mt-1">Por favor, intenta recargar la página.</p>
+        </div>
+      ) : !items.length ? (
+        <div className="text-center py-12 bg-bg-secondary border border-border-light rounded-xl p-6 max-w-xl mx-auto">
+          <p className="text-text-secondary text-sm">No hay rifas disponibles en este momento.</p>
+          <p className="text-text-muted text-xs mt-1">Vuelve pronto para ver nuevas rifas.</p>
+        </div>
+      ) : (
+        <div className="relative w-full mx-auto touch-pan-y overflow-hidden">
         {!enableCarousel && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 place-items-center">
             {items.map((r) => (
@@ -55,7 +70,7 @@ export default function RafflesCarousel({ raffles }: RafflesCarouselProps) {
             <RaffleCard
               raffle={items[activeIndex]}
               variant="single"
-              onDetails={() => setOpenDetail(true)}
+              onDetails={() => setSelectedRaffle(items[activeIndex])}
             />
           </motion.div>
         )}
@@ -95,11 +110,13 @@ export default function RafflesCarousel({ raffles }: RafflesCarouselProps) {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      )}
+      
       <RaffleDetailModal
-        raffleId={items[activeIndex]?.id || null}
-        open={openDetail}
-        onClose={() => setOpenDetail(false)}
+        raffle={selectedRaffle}
+        open={!!selectedRaffle}
+        onClose={() => setSelectedRaffle(null)}
       />
     </section>
   );

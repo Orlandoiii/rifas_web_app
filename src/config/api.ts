@@ -3,7 +3,6 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://192.168
 export const API_ENDPOINTS = {
   raffles: {
     list: () => `${API_BASE_URL}/raffles`,
-    detail: (id: string) => `${API_BASE_URL}/raffles/${id}`,
     soldTickets: (id: string) => `${API_BASE_URL}/raffles/${id}/tickets/sold`,
   },
   payments: {

@@ -1,21 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Modal from '../lib/components/modal/core/Modal';
 import { Button } from '../lib/components/button';
+import { Loader } from '../lib/components/loader';
 import { Stepper } from '../lib/components/stepper';
 import type { Step } from '../lib/components/stepper';
 import UserDataForm from './UserDataForm';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
 import { useRaffleDetail } from '../../hooks';
-import type { RaffleTicket } from '../../types/raffles';
+import type { RaffleTicket, RaffleSummary } from '../../types/raffles';
 
 interface RaffleDetailModalProps {
-    raffleId: string | null;
+    raffle: RaffleSummary | null;
     open: boolean;
     onClose: () => void;
 }
 
-export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDetailModalProps) {
-    const { data: detail } = useRaffleDetail(open ? raffleId : null);
+export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetailModalProps) {
+    const { data: detail, isLoading: loadingTickets, isError: errorTickets } = useRaffleDetail(open ? raffle : null);
     const [selected, setSelected] = useState<number[]>([]);
     const [page, setPage] = useState(0);
     const pageSize = 50;
@@ -26,7 +27,7 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
         if (!open) return;
         setSelected([]);
         setPage(0);
-    }, [open, raffleId]);
+    }, [open, raffle?.id]);
 
     const availableTickets = useMemo(() => (detail?.tickets || []).filter(n => n.status === 'available'), [detail]);
     const totalPages = useMemo(() => Math.max(1, Math.ceil(((detail?.tickets?.length) || 0) / pageSize)), [detail]);
@@ -82,7 +83,7 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
         {
             id: 'numbers',
             title: 'Selecciona tus números',
-            validate: () => selected.length > 0,
+            validate: () => !loadingTickets && selected.length > 0,
             render: () => (
                 <div className="space-y-4">
                     <div className="flex flex-col md:flex-row gap-4">
@@ -115,9 +116,9 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
                                 </div>
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
-                                <Button onClick={() => pickRandom(1)}>Aleatorio x1</Button>
-                                <Button variant="outline" onClick={() => pickRandom(5)}>Aleatorio x5</Button>
-                                <Button variant="ghost" onClick={() => setSelected([])}>Limpiar</Button>
+                                <Button onClick={() => pickRandom(1)} disabled={loadingTickets}>Aleatorio x1</Button>
+                                <Button variant="outline" onClick={() => pickRandom(5)} disabled={loadingTickets}>Aleatorio x5</Button>
+                                <Button variant="ghost" onClick={() => setSelected([])} disabled={loadingTickets || selected.length === 0}>Limpiar</Button>
                             </div>
                         </div>
                     </div>
@@ -128,6 +129,7 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
                             <div className="flex items-center gap-2">
                                 <input type="number" min={detail?.initialTicket || 1} max={(detail ? detail.initialTicket + detail.ticketsTotal - 1 : 1)} value={jumpValue}
                                     onChange={(e) => setJumpValue(e.target.value)}
+                                    disabled={loadingTickets}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             const n = parseInt(jumpValue, 10);
@@ -160,14 +162,23 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
                                 }}>Ir</Button>
                             </div>
                             <div className="flex gap-2">
-                                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>Anterior</Button>
-                                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>Siguiente</Button>
+                                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={loadingTickets || page === 0}>Anterior</Button>
+                                <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={loadingTickets || page >= totalPages - 1}>Siguiente</Button>
                             </div>
                         </div>
-                        <div className="pb-4 md:pb-0">
-                            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 place-items-center">
-                                {pageTickets.map(ticket => (<TicketBadge key={ticket.number} ticket={ticket} />))}
-                            </div>
+                        <div className="pb-4 md:pb-0 min-h-[200px] flex items-center justify-center">
+                            {loadingTickets ? (
+                                <Loader size="md" />
+                            ) : errorTickets ? (
+                                <div className="text-center py-8">
+                                    <p className="text-text-secondary text-sm">Error al cargar los tickets.</p>
+                                    <p className="text-text-muted text-xs mt-1">Por favor, intenta nuevamente más tarde.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 place-items-center w-full">
+                                    {pageTickets.map(ticket => (<TicketBadge key={ticket.number} ticket={ticket} />))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

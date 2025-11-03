@@ -11,7 +11,6 @@ export interface RaffleSummary {
   ticketsTotal: number;
   totalSold: number;
   endsAt: string;             // ISO
-  highlight?: boolean;
   isMain?: boolean;
 }
 
@@ -31,7 +30,6 @@ export interface RaffleTicket {
 
 export interface IRafflesService {
   getRaffles(signal?: AbortSignal): Promise<RaffleSummary[]>;
-  getRaffleDetail(id: RaffleId, signal?: AbortSignal): Promise<RaffleSummary>;
   getSoldTickets(raffleId: RaffleId, signal?: AbortSignal): Promise<number[]>;
 }
 
