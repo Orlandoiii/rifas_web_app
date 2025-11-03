@@ -2,8 +2,7 @@ import * as React from 'react';
 import { Button } from '../../lib/components/button';
 import { Input } from '../../lib/components/input';
 import { Select } from '../../lib/components/select';
-import type { Bank } from '../../../types/payments';
-import { getBanks } from '../../../services/payments';
+import { useBanks } from '../../../hooks';
 
 export type SypagoDebitPayload = {
   bankCode: string;
@@ -23,7 +22,7 @@ interface SypagoDebitProps {
 }
 
 export default function SypagoDebit({ raffleTitle, selectedNumbers, price, currency, onSubmit }: SypagoDebitProps) {
-  const [banks, setBanks] = React.useState<Bank[]>([]);
+  const { data: banks = [] } = useBanks();
   const [payload, setPayload] = React.useState<SypagoDebitPayload>({
     bankCode: '',
     mode: 'phone',
@@ -34,11 +33,6 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
   });
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
-
-  React.useEffect(() => {
-    getBanks().then(setBanks);
-  }, []);
-
   const bankOptions = React.useMemo(() => banks.map(b => ({ value: b.code, label: `${b.code} - ${b.name}` })), [banks]);
 
   const canPay = React.useMemo(() => {

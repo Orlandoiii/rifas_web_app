@@ -1,0 +1,21 @@
+import { useQuery } from '@tanstack/react-query';
+import { getBanks } from '../services/payments';
+
+export const PAYMENT_QUERY_KEYS = {
+  payments: {
+    all: ['payments'] as const,
+    banks: () => [...PAYMENT_QUERY_KEYS.payments.all, 'banks'] as const,
+  },
+};
+
+/**
+ * Hook para obtener la lista de bancos
+ */
+export function useBanks() {
+  return useQuery({
+    queryKey: PAYMENT_QUERY_KEYS.payments.banks(),
+    queryFn: ({ signal }) => getBanks(signal),
+    staleTime: 1000 * 60 * 30, // 30 minutos (los bancos no cambian frecuentemente)
+  });
+}
+

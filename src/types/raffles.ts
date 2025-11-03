@@ -7,10 +7,12 @@ export interface RaffleSummary {
   coverImageUrl: string;
   price: number;              // precio por ticket
   currency: 'VES' | 'USD';
+  initialTicket: number;
   ticketsTotal: number;
-  ticketsSold: number;
+
   endsAt: string;             // ISO
   highlight?: boolean;
+  isMain?: boolean;
 }
 
 export interface RaffleDetail extends RaffleSummary {
@@ -21,12 +23,12 @@ export interface RaffleDetail extends RaffleSummary {
 
 export type RaffleNumberStatus = 'available' | 'sold' | 'reserved';
 export interface RaffleNumber {
+  raffleId: RaffleId;
   number: number;
   status: RaffleNumberStatus;
 }
 
 export interface IRafflesService {
-  getCurrentRaffle(signal?: AbortSignal): Promise<RaffleSummary | null>;
   getRaffles(signal?: AbortSignal): Promise<RaffleSummary[]>;
   getRaffleDetail(id: RaffleId, signal?: AbortSignal): Promise<RaffleDetail>;
 }

@@ -5,8 +5,8 @@ import { Stepper } from '../lib/components/stepper';
 import type { Step } from '../lib/components/stepper';
 import UserDataForm from './UserDataForm';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
-import { rafflesService } from '../../services/raffles';
-import type { RaffleDetail, RaffleNumber } from '../../types/raffles';
+import { useRaffleDetail } from '../../hooks';
+import type { RaffleNumber } from '../../types/raffles';
 
 interface RaffleDetailModalProps {
     raffleId: string | null;
@@ -15,21 +15,17 @@ interface RaffleDetailModalProps {
 }
 
 export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDetailModalProps) {
-
-    const [detail, setDetail] = useState<RaffleDetail | null>(null);
+    const { data: detail } = useRaffleDetail(open ? raffleId : null);
     const [selected, setSelected] = useState<number[]>([]);
     const [page, setPage] = useState(0);
     const pageSize = 50;
     const [jumpValue, setJumpValue] = useState('');
     const [showSelected, setShowSelected] = useState(false);
 
-    console.log("Renderizando Detalle de Rifa")
-
     useEffect(() => {
-        if (!open || !raffleId) return;
+        if (!open) return;
         setSelected([]);
         setPage(0);
-        rafflesService.getRaffleDetail(raffleId).then(setDetail);
     }, [open, raffleId]);
 
     const availableNumbers = useMemo(() => (detail?.numbers || []).filter(n => n.status === 'available'), [detail]);
