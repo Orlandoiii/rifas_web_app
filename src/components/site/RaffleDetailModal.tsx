@@ -6,7 +6,7 @@ import type { Step } from '../lib/components/stepper';
 import UserDataForm from './UserDataForm';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
 import { useRaffleDetail } from '../../hooks';
-import type { RaffleNumber } from '../../types/raffles';
+import type { RaffleTicket } from '../../types/raffles';
 
 interface RaffleDetailModalProps {
     raffleId: string | null;
@@ -28,23 +28,23 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
         setPage(0);
     }, [open, raffleId]);
 
-    const availableNumbers = useMemo(() => (detail?.numbers || []).filter(n => n.status === 'available'), [detail]);
-    const totalPages = useMemo(() => Math.max(1, Math.ceil(((detail?.numbers?.length) || 0) / pageSize)), [detail]);
-    const pageNumbers = useMemo(() => {
-        const nums = detail?.numbers || [];
+    const availableTickets = useMemo(() => (detail?.tickets || []).filter(n => n.status === 'available'), [detail]);
+    const totalPages = useMemo(() => Math.max(1, Math.ceil(((detail?.tickets?.length) || 0) / pageSize)), [detail]);
+    const pageTickets = useMemo(() => {
+        const tickets = detail?.tickets || [];
         const start = page * pageSize;
-        return nums.slice(start, start + pageSize);
+        return tickets.slice(start, start + pageSize);
     }, [detail, page]);
 
 
-    const toggleNumber = (n: RaffleNumber) => {
-        if (n.status !== 'available') return;
-        setSelected(prev => prev.includes(n.number) ? prev.filter(x => x !== n.number) : [...prev, n.number]);
+    const toggleTicket = (ticket: RaffleTicket) => {
+        if (ticket.status !== 'available') return;
+        setSelected(prev => prev.includes(ticket.number) ? prev.filter(x => x !== ticket.number) : [...prev, ticket.number]);
     };
 
     const pickRandom = (count = 1) => {
-        if (!availableNumbers.length) return;
-        const pool = availableNumbers.map(n => n.number).filter(n => !selected.includes(n));
+        if (!availableTickets.length) return;
+        const pool = availableTickets.map(n => n.number).filter(n => !selected.includes(n));
         const picks: number[] = [];
         for (let i = 0; i < Math.min(count, pool.length); i++) {
             const idx = Math.floor(Math.random() * pool.length);
@@ -53,17 +53,17 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
         setSelected(prev => [...prev, ...picks]);
     };
 
-    const NumberBadge = ({ n }: { n: RaffleNumber }) => {
-        const isSelected = selected.includes(n.number);
+    const TicketBadge = ({ ticket }: { ticket: RaffleTicket }) => {
+        const isSelected = selected.includes(ticket.number);
         const base = 'w-12 h-10 md:w-14 md:h-12 rounded-md flex items-center justify-center text-sm md:text-base font-semibold transition-colors';
         let cls = '';
-        if (n.status === 'sold') cls = 'bg-border-light text-text-muted cursor-not-allowed';
-        else if (n.status === 'reserved') cls = 'bg-bg-tertiary text-text-secondary cursor-not-allowed';
+        if (ticket.status === 'sold') cls = 'bg-border-light text-text-muted cursor-not-allowed';
+        else if (ticket.status === 'reserved') cls = 'bg-bg-tertiary text-text-secondary cursor-not-allowed';
         else if (isSelected) cls = 'bg-selected text-white ring-2 ring-selected/60';
         else cls = 'bg-bg-secondary text-text-primary hover:bg-selected/20 cursor-pointer';
         return (
-            <button className={`${base} ${cls}`} onClick={() => toggleNumber(n)} disabled={n.status !== 'available'}>
-                {n.number}
+            <button className={`${base} ${cls}`} onClick={() => toggleTicket(ticket)} disabled={ticket.status !== 'available'}>
+                {ticket.number}
             </button>
         );
     };
@@ -126,17 +126,19 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
                             <div className="text-text-secondary text-sm">Página {page + 1} / {totalPages}</div>
                             <div className="flex items-center gap-2">
-                                <input type="number" min={1} max={detail?.numbers?.length || 1} value={jumpValue}
+                                <input type="number" min={detail?.initialTicket || 1} max={(detail ? detail.initialTicket + detail.ticketsTotal - 1 : 1)} value={jumpValue}
                                     onChange={(e) => setJumpValue(e.target.value)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             const n = parseInt(jumpValue, 10);
-                                            if (!isNaN(n) && detail?.numbers?.length) {
-                                                const max = detail.numbers.length;
-                                                if (n >= 1 && n <= max) {
-                                                    setPage(Math.floor((n - 1) / pageSize));
-                                                    const target = detail.numbers[n - 1];
-                                                    if (target && target.status === 'available') setSelected(prev => prev.includes(n) ? prev : [...prev, n]);
+                                            if (!isNaN(n) && detail?.tickets) {
+                                                const ticket = detail.tickets.find(t => t.number === n);
+                                                if (ticket) {
+                                                    const ticketIndex = detail.tickets.indexOf(ticket);
+                                                    setPage(Math.floor(ticketIndex / pageSize));
+                                                    if (ticket.status === 'available') {
+                                                        setSelected(prev => prev.includes(n) ? prev : [...prev, n]);
+                                                    }
                                                 }
                                             }
                                         }
@@ -145,12 +147,14 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
                                     className="no-spinner ios-zoom-fix bg-bg-secondary border border-border-light rounded-md px-3 py-2 text-base sm:text-sm text-text-primary w-40 focus:border-selected focus:outline-none" />
                                 <Button variant="secondary" size="sm" onClick={() => {
                                     const n = parseInt(jumpValue, 10);
-                                    if (!isNaN(n) && detail?.numbers?.length) {
-                                        const max = detail.numbers.length;
-                                        if (n >= 1 && n <= max) {
-                                            setPage(Math.floor((n - 1) / pageSize));
-                                            const target = detail.numbers[n - 1];
-                                            if (target && target.status === 'available') setSelected(prev => prev.includes(n) ? prev : [...prev, n]);
+                                    if (!isNaN(n) && detail?.tickets) {
+                                        const ticket = detail.tickets.find(t => t.number === n);
+                                        if (ticket) {
+                                            const ticketIndex = detail.tickets.indexOf(ticket);
+                                            setPage(Math.floor(ticketIndex / pageSize));
+                                            if (ticket.status === 'available') {
+                                                setSelected(prev => prev.includes(n) ? prev : [...prev, n]);
+                                            }
                                         }
                                     }
                                 }}>Ir</Button>
@@ -162,7 +166,7 @@ export default function RaffleDetailModal({ raffleId, open, onClose }: RaffleDet
                         </div>
                         <div className="pb-4 md:pb-0">
                             <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 place-items-center">
-                                {pageNumbers.map(n => (<NumberBadge key={n.number} n={n} />))}
+                                {pageTickets.map(ticket => (<TicketBadge key={ticket.number} ticket={ticket} />))}
                             </div>
                         </div>
                     </div>

@@ -13,8 +13,8 @@ export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails 
   const imgH = variant === 'single' ? 'h-[60vw] sm:h-64 md:h-80' : 'h-52 md:h-64';
   const bodyW = variant === 'single' ? 'w-[92vw] sm:w-[360px] md:w-[520px]' : 'w-[300px] md:w-[360px]';
 
-  const soldPct = Math.round((r.ticketsSold / Math.max(1, r.ticketsTotal)) * 100);
-  const available = Math.max(0, r.ticketsTotal - r.ticketsSold);
+  const soldPct = Math.round((r.totalSold / Math.max(1, r.ticketsTotal)) * 100);
+  const available = Math.max(0, r.ticketsTotal - r.totalSold);
   const timeLeft = useCountdown(r.endsAt);
 
   return (

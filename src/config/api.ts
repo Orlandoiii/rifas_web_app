@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
   raffles: {
     list: () => `${API_BASE_URL}/raffles`,
     detail: (id: string) => `${API_BASE_URL}/raffles/${id}`,
+    soldTickets: (id: string) => `${API_BASE_URL}/raffles/${id}/tickets/sold`,
   },
   payments: {
     banks: () => `${API_BASE_URL}/payments/banks`,
