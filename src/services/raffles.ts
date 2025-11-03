@@ -1,8 +1,8 @@
-import type { IRafflesService, CurrentRaffle, RaffleSummary, RaffleDetail, RaffleNumber } from '../types/raffles';
+import type { IRafflesService, RaffleSummary, RaffleDetail, RaffleNumber } from '../types/raffles';
 import { mockCurrentRaffle, mockRaffles } from '../mocks/raffles';
 
 export const rafflesService: IRafflesService = {
-  async getCurrentRaffle(_signal?: AbortSignal): Promise<CurrentRaffle | null> {
+  async getCurrentRaffle(_signal?: AbortSignal): Promise<RaffleSummary | null> {
     // Simulación de latencia
     await new Promise(r => setTimeout(r, 300));
     return mockCurrentRaffle;
@@ -16,7 +16,6 @@ export const rafflesService: IRafflesService = {
   async getRaffleDetail(id: string, _signal?: AbortSignal): Promise<RaffleDetail> {
     await new Promise(r => setTimeout(r, 300));
     const base = mockRaffles.find(r => r.id === id) || mockCurrentRaffle;
-    // Crear 60 números con algunos vendidos y reservados
     const numbers: RaffleNumber[] = Array.from({ length: 12000 }, (_, i) => {
       const n = i + 1;
       const rand = Math.random();

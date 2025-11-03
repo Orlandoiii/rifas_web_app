@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../../components/lib/components/button';
 import { Loader } from '../../components/lib/components/loader';
-import { useWithLoaderAsync } from '../../components/lib/components/modal/load_modal/loadModalStore';
 import { useTheme } from '../../components/lib/components/theme';
-import type { CurrentRaffle } from '../../types/raffles';
+import type { RaffleSummary } from '../../types/raffles';
 
 
 function useResolvedTheme(theme: 'dark' | 'light' | 'system') {
@@ -16,7 +15,7 @@ function useResolvedTheme(theme: 'dark' | 'light' | 'system') {
   return theme;
 }
 
-function useCountdown(targetIso?: string) {
+export function useCountdown(targetIso?: string) {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
@@ -68,7 +67,7 @@ function BuyButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function RaffleDetails({ raffle, timeLeft, onBuy }: { raffle: CurrentRaffle; timeLeft: string; onBuy: () => void }) {
+function RaffleDetails({ raffle, timeLeft, onBuy }: { raffle: RaffleSummary; timeLeft: string; onBuy: () => void }) {
   return (
     <div className="text-center">
       <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold drop-shadow">{raffle.title}</h2>
@@ -87,21 +86,14 @@ function RaffleDetails({ raffle, timeLeft, onBuy }: { raffle: CurrentRaffle; tim
 }
 
 interface HeroProps {
-  raffle: CurrentRaffle | null;
+  raffle: RaffleSummary | null;
+  onBuy: () => void;
 }
 
-export default function Hero({ raffle }: HeroProps) {
-  const withLoaderAsync = useWithLoaderAsync();
+export default function Hero({ raffle, onBuy }: HeroProps) {
   const { theme } = useTheme();
   const timeLeft = useCountdown(raffle?.endsAt);
   const resolvedTheme = useResolvedTheme(theme);
-
-  // progress removed from UI but kept as potential future metric
-
-  const handleBuy = async () => {
-    await withLoaderAsync(async () => new Promise(r => setTimeout(r, 600)), 'Abriendo compra...');
-  };
-
 
   return (
     <section className="relative overflow-hidden min-h-screen flex items-center">
@@ -118,7 +110,7 @@ export default function Hero({ raffle }: HeroProps) {
 
         <div className="mt-8 md:mt-10 lg:mt-12 mx-auto max-w-4xl">
           {raffle ? (
-            <RaffleDetails raffle={raffle} timeLeft={timeLeft} onBuy={handleBuy} />
+            <RaffleDetails raffle={raffle} timeLeft={timeLeft} onBuy={onBuy} />
           ) : (
             <div className="bg-bg-secondary/80 border border-border-light rounded-2xl p-5 max-w-xl mx-auto">
               <div className="flex items-center gap-3">

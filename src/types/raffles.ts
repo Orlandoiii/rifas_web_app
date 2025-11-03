@@ -19,8 +19,6 @@ export interface RaffleDetail extends RaffleSummary {
   numbers?: RaffleNumber[];
 }
 
-export interface CurrentRaffle extends RaffleSummary {}
-
 export type RaffleNumberStatus = 'available' | 'sold' | 'reserved';
 export interface RaffleNumber {
   number: number;
@@ -28,7 +26,7 @@ export interface RaffleNumber {
 }
 
 export interface IRafflesService {
-  getCurrentRaffle(signal?: AbortSignal): Promise<CurrentRaffle | null>;
+  getCurrentRaffle(signal?: AbortSignal): Promise<RaffleSummary | null>;
   getRaffles(signal?: AbortSignal): Promise<RaffleSummary[]>;
   getRaffleDetail(id: RaffleId, signal?: AbortSignal): Promise<RaffleDetail>;
 }

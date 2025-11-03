@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { Button } from '../../components/lib/components/button';
 import type { RaffleSummary } from '../../types/raffles';
+import { useCountdown } from './Hero';
 
 interface RaffleCardProps {
   raffle: RaffleSummary;
@@ -15,27 +15,7 @@ export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails 
 
   const soldPct = Math.round((r.ticketsSold / Math.max(1, r.ticketsTotal)) * 100);
   const available = Math.max(0, r.ticketsTotal - r.ticketsSold);
-
-  const [timeLeft, setTimeLeft] = useState('00:00:00');
-
-  useEffect(() => {
-    const target = new Date(r.endsAt).getTime();
-    const format = (n: number) => String(n).padStart(2, '0');
-    const tick = () => {
-      const diff = target - Date.now();
-      if (diff <= 0) {
-        setTimeLeft('00:00:00');
-        return;
-      }
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-      setTimeLeft(`${format(hours)}:${format(minutes)}:${format(seconds)}`);
-    };
-    tick();
-    const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, [r.endsAt]);
+  const timeLeft = useCountdown(r.endsAt);
 
   return (
     <article className="bg-bg-secondary border border-border-light rounded-xl overflow-hidden shadow">
