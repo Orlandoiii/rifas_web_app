@@ -1,14 +1,11 @@
 import * as React from 'react';
-import { Button } from '../../lib/components/button';
 import { Input } from '../../lib/components/input';
 import { Select } from '../../lib/components/select';
 import { useBanks } from '../../../hooks';
 
 export type SypagoDebitPayload = {
   bankCode: string;
-  mode: 'phone' | 'account';
-  phone?: string;
-  account?: string;
+  phone: string;
   docType: 'V' | 'E' | 'J' | 'P';
   docNumber: string;
 };
@@ -74,40 +71,13 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
           disabled={isFormDisabled}
         />
 
-        <div className="flex items-center gap-2">
-          <Button 
-            variant={payload.mode === 'phone' ? 'secondary' : 'ghost'} 
-            onClick={() => onChange({ ...payload, mode: 'phone' })}
-            disabled={isFormDisabled}
-          >
-            Teléfono
-          </Button>
-          <Button 
-            variant={payload.mode === 'account' ? 'secondary' : 'ghost'} 
-            onClick={() => onChange({ ...payload, mode: 'account' })}
-            disabled={isFormDisabled}
-          >
-            Cuenta
-          </Button>
-        </div>
-
-        {payload.mode === 'phone' ? (
-          <Input
-            label="Teléfono"
-            placeholder="04121234567"
-            value={payload.phone}
-            onChange={(e) => onChange({ ...payload, phone: e.target.value })}
-            disabled={isFormDisabled}
-          />
-        ) : (
-          <Input
-            label="Cuenta"
-            placeholder="XXXXXXXXXXXXXX"
-            value={payload.account}
-            onChange={(e) => onChange({ ...payload, account: e.target.value })}
-            disabled={isFormDisabled}
-          />
-        )}
+        <Input
+          label="Teléfono"
+          placeholder="04121234567"
+          value={payload.phone}
+          onChange={(e) => onChange({ ...payload, phone: e.target.value })}
+          disabled={isFormDisabled}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Select

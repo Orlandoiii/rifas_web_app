@@ -34,9 +34,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         buyer: { id: '', name: '', phone: '', email: '' },
         payment: {
             bankCode: '',
-            mode: 'phone',
             phone: '',
-            account: '',
             docType: 'V',
             docNumber: ''
         },
@@ -113,8 +111,8 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
             ),
             validate: (d) => Boolean(
                 d.payment.bankCode &&
-                d.payment.docNumber &&
-                ((d.payment.mode === 'phone' && d.payment.phone) || (d.payment.mode === 'account' && d.payment.account))
+                d.payment.phone &&
+                d.payment.docNumber
             )
         }
     ];

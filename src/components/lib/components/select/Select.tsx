@@ -1,11 +1,11 @@
-import React, { forwardRef, useState, useEffect, useRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../utils';
 
 const selectVariants = cva(
   [
     'w-full',
-    'bg-transparent',
+    'bg-bg-secondary',
     'text-sm',
     'transition-all',
     'duration-200',
@@ -16,6 +16,7 @@ const selectVariants = cva(
     'appearance-none',
     'cursor-pointer',
     'text-text-primary',
+    'pr-10', // Espacio para el icono de flecha
   ],
   {
     variants: {
@@ -32,7 +33,7 @@ const selectVariants = cva(
   }
 );
 
-interface SelectProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
   label?: string;
   variant?: VariantProps<typeof selectVariants>['variant'];
   containerClassName?: string;
@@ -42,10 +43,10 @@ interface SelectProps extends React.InputHTMLAttributes<HTMLInputElement> {
   options: Array<{ value: string; label: string }>;
   placeholder?: string;
   onValueChange?: (value: string) => void;
-  direction?: 'up' | 'down';
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
-export const Select = forwardRef<HTMLInputElement, SelectProps>(({
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
   label,
   variant = 'classic',
   className,
@@ -55,78 +56,38 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(({
   hasSubmitted = false,
   options = [],
   placeholder,
-  value: externalValue,
+  value,
   onValueChange,
   onChange,
-  direction = 'down',
   ...props
 }, ref) => {
-  const [internalValue, setInternalValue] = useState(externalValue || '');
-  const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
   const isFloating = variant === 'floating';
 
-  useEffect(() => {
-    setInternalValue(externalValue || '');
-  }, [externalValue]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setIsFocused(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const handleSelect = (option: { value: string; label: string }) => {
-    setInternalValue(option.value);
-    setIsOpen(false);
-    setIsFocused(false);
-    
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (onValueChange) {
-      onValueChange(option.value);
+      onValueChange(e.target.value);
     }
-    
     if (onChange) {
-      // Crear un evento sintético para mantener compatibilidad
-      const syntheticEvent = {
-        target: { value: option.value }
-      } as React.ChangeEvent<HTMLInputElement>;
-      onChange(syntheticEvent);
+      onChange(e);
     }
   };
 
   const handleFocus = () => {
-    setIsOpen(true);
     setIsFocused(true);
   };
 
-  const selectedOption = options.find(option => option.value === internalValue);
-  const displayValue = selectedOption ? selectedOption.label : '';
-  
-  // Determinar si el label debe flotar (como en el Input)
-  const shouldFloat = isFloating && (isFocused || !!displayValue);
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
 
-  // Clases para el dropdown según la dirección
-  const dropdownClasses = cn(
-    'absolute w-full z-10 border border-border-light rounded-lg overflow-hidden bg-bg-tertiary shadow-lg',
-    direction === 'up' 
-      ? 'bottom-full mb-1' 
-      : 'top-full mt-1'
-  );
+  // Determinar si el label debe flotar (como en el Input)
+  const shouldFloat = isFloating && (isFocused || !!value);
 
   return (
     <div 
-      ref={containerRef} 
       className={cn('group relative', containerClassName)}
-      data-filled={!!displayValue}
+      data-filled={!!value}
       data-focused={isFocused}
     >
       {label && (
@@ -149,26 +110,34 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(({
       )}
       
       <div className="relative">
-        <input
+        <select
           ref={ref}
-          value={displayValue}
-          readOnly
+          value={value}
+          onChange={handleChange}
           onFocus={handleFocus}
+          onBlur={handleBlur}
           className={cn(
             selectVariants({ variant }),
             className
           )}
-          placeholder={isFloating ? undefined : placeholder}
           {...props}
-        />
+        >
+          {placeholder && (
+            <option value="" disabled>
+              {placeholder}
+            </option>
+          )}
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         
         {/* Icono de flecha personalizado */}
         <div className="absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none">
           <svg
-            className={cn(
-              'w-4 h-4 text-text-secondary transition-transform duration-200',
-              isOpen && (direction === 'down' ? 'rotate-180' : 'rotate-0')
-            )}
+            className="w-4 h-4 text-text-secondary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -182,30 +151,6 @@ export const Select = forwardRef<HTMLInputElement, SelectProps>(({
           </svg>
         </div>
       </div>
-
-      {/* Dropdown de opciones */}
-      {isOpen && (
-        <div className={dropdownClasses}>
-          <div className="max-h-48 overflow-y-auto">
-            {options.length > 0 ? (
-              options.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-bg-secondary transition-colors duration-200"
-                  onClick={() => handleSelect(option)}
-                >
-                  {option.label}
-                </button>
-              ))
-            ) : (
-              <div className="px-3 py-2 text-sm text-text-muted">
-                Sin opciones disponibles
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Mensaje de error */}
       {error && (
