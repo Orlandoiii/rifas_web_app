@@ -34,6 +34,12 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
   const bankOptions = React.useMemo(() => banks.map(b => ({ value: b.code, label: `${b.code} - ${b.name}` })), [banks]);
+  const docTypeOptions = React.useMemo(() => [
+    { value: 'V', label: 'V - Venezolano' },
+    { value: 'E', label: 'E - Extranjero' },
+    { value: 'J', label: 'J - Jurídico' },
+    { value: 'P', label: 'P - Pasaporte' }
+  ], []);
 
   const canPay = React.useMemo(() => {
     if (!payload.bankCode) return false;
@@ -56,7 +62,7 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
         </div>
         {!!selectedNumbers.length && (
           <div className="mt-2 flex flex-wrap gap-2 max-h-24 overflow-auto">
-            {selectedNumbers.slice().sort((a,b)=>a-b).map(n => (
+            {selectedNumbers.slice().sort((a, b) => a - b).map(n => (
               <span key={n} className="text-xs px-2 py-1 rounded-md bg-bg-secondary border border-border-light text-text-primary">#{n}</span>
             ))}
           </div>
@@ -94,21 +100,14 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
           />
         )}
 
-        <div className="grid grid-cols-3 gap-3 items-end">
-          <div>
-            <div className="text-text-secondary text-sm mb-1">Doc</div>
-            <select
-              className="bg-bg-secondary border border-border-light rounded-md px-3 py-2 text-sm text-text-primary w-full focus:border-selected focus:outline-none"
-              value={payload.docType}
-              onChange={(e) => setPayload(p => ({ ...p, docType: e.target.value as any }))}
-            >
-              <option value="V">V</option>
-              <option value="E">E</option>
-              <option value="J">J</option>
-              <option value="P">P</option>
-            </select>
-          </div>
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Select
+            label="Tipo de Documento"
+            options={docTypeOptions}
+            value={payload.docType}
+            onValueChange={(value) => setPayload(p => ({ ...p, docType: value as any }))}
+          />
+          <div className="md:col-span-2">
             <Input
               label="Número de Documento"
               placeholder="12345678"
@@ -116,10 +115,6 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
               onChange={(e) => setPayload(p => ({ ...p, docNumber: e.target.value }))}
             />
           </div>
-        </div>
-
-        <div className="pt-2">
-          <Button className="w-full" disabled={!canPay} onClick={() => onSubmit(payload)}>Pagar</Button>
         </div>
       </div>
     </div>

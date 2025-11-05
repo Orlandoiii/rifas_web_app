@@ -229,15 +229,13 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 finishLabel="Pagar"
                 onFinish={() => { /* TODO: enviar pago */ }}
                 renderFooter={({ current, total, canNext, goBack, goNext }) => (
-                    current === total - 1
-                        ? null
-                        : (
-                            <div className="mt-6 flex items-center justify-between">
-                                <Button variant="secondary" onClick={goBack} disabled={current === 0}>Atrás</Button>
-                                <div className="flex-1" />
-                                <Button onClick={goNext} disabled={!canNext}>Continuar</Button>
-                            </div>
-                        )
+                    <div className="mt-6 flex items-center justify-between">
+                        <Button variant="secondary" onClick={goBack} disabled={current === 0}>Atrás</Button>
+                        <div className="flex-1" />
+                        <Button onClick={goNext} disabled={!canNext}>
+                            {current === total - 1 ? 'Pagar' : 'Continuar'}
+                        </Button>
+                    </div>
                 )}
             />
         </Modal>
