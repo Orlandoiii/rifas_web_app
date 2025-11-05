@@ -18,19 +18,13 @@ interface SypagoDebitProps {
   selectedNumbers: number[];
   price: number;
   currency: string;
-  onSubmit: (payload: SypagoDebitPayload) => void;
+  payload: SypagoDebitPayload;
+  onChange: (payload: SypagoDebitPayload) => void;
+  disabled?: boolean;
 }
 
-export default function SypagoDebit({ raffleTitle, selectedNumbers, price, currency, onSubmit }: SypagoDebitProps) {
-  const { data: banks = [] } = useBanks();
-  const [payload, setPayload] = React.useState<SypagoDebitPayload>({
-    bankCode: '',
-    mode: 'phone',
-    phone: '',
-    account: '',
-    docType: 'V',
-    docNumber: ''
-  });
+export default function SypagoDebit({ raffleTitle, selectedNumbers, price, currency, payload, onChange, disabled = false }: SypagoDebitProps) {
+  const { data: banks = [], isLoading: loadingBanks, isError: errorBanks } = useBanks();
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
   const bankOptions = React.useMemo(() => banks.map(b => ({ value: b.code, label: `${b.code} - ${b.name}` })), [banks]);
@@ -41,13 +35,7 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
     { value: 'P', label: 'P - Pasaporte' }
   ], []);
 
-  const canPay = React.useMemo(() => {
-    if (!payload.bankCode) return false;
-    if (payload.mode === 'phone' && !payload.phone) return false;
-    if (payload.mode === 'account' && !payload.account) return false;
-    if (!payload.docNumber) return false;
-    return true;
-  }, [payload]);
+  const isFormDisabled = disabled || loadingBanks || errorBanks;
 
   return (
     <div className="space-y-4">
@@ -71,17 +59,36 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
 
       {/* Formulario Sypago Debit */}
       <div className="space-y-3">
+        {errorBanks && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">
+            Error al cargar los bancos. Por favor, intenta nuevamente.
+          </div>
+        )}
+        
         <Select
           label="Banco"
           options={bankOptions}
-          placeholder="Seleccione el banco"
+          placeholder={loadingBanks ? "Cargando bancos..." : "Seleccione el banco"}
           value={payload.bankCode}
-          onValueChange={(value) => setPayload(p => ({ ...p, bankCode: value }))}
+          onValueChange={(value) => onChange({ ...payload, bankCode: value })}
+          disabled={isFormDisabled}
         />
 
         <div className="flex items-center gap-2">
-          <Button variant={payload.mode === 'phone' ? 'secondary' : 'ghost'} onClick={() => setPayload(p => ({ ...p, mode: 'phone' }))}>Teléfono</Button>
-          <Button variant={payload.mode === 'account' ? 'secondary' : 'ghost'} onClick={() => setPayload(p => ({ ...p, mode: 'account' }))}>Cuenta</Button>
+          <Button 
+            variant={payload.mode === 'phone' ? 'secondary' : 'ghost'} 
+            onClick={() => onChange({ ...payload, mode: 'phone' })}
+            disabled={isFormDisabled}
+          >
+            Teléfono
+          </Button>
+          <Button 
+            variant={payload.mode === 'account' ? 'secondary' : 'ghost'} 
+            onClick={() => onChange({ ...payload, mode: 'account' })}
+            disabled={isFormDisabled}
+          >
+            Cuenta
+          </Button>
         </div>
 
         {payload.mode === 'phone' ? (
@@ -89,14 +96,16 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
             label="Teléfono"
             placeholder="04121234567"
             value={payload.phone}
-            onChange={(e) => setPayload(p => ({ ...p, phone: e.target.value }))}
+            onChange={(e) => onChange({ ...payload, phone: e.target.value })}
+            disabled={isFormDisabled}
           />
         ) : (
           <Input
             label="Cuenta"
             placeholder="XXXXXXXXXXXXXX"
             value={payload.account}
-            onChange={(e) => setPayload(p => ({ ...p, account: e.target.value }))}
+            onChange={(e) => onChange({ ...payload, account: e.target.value })}
+            disabled={isFormDisabled}
           />
         )}
 
@@ -105,14 +114,16 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
             label="Tipo de Documento"
             options={docTypeOptions}
             value={payload.docType}
-            onValueChange={(value) => setPayload(p => ({ ...p, docType: value as any }))}
+            onValueChange={(value) => onChange({ ...payload, docType: value as any })}
+            disabled={isFormDisabled}
           />
           <div className="md:col-span-2">
             <Input
               label="Número de Documento"
               placeholder="12345678"
               value={payload.docNumber}
-              onChange={(e) => setPayload(p => ({ ...p, docNumber: e.target.value }))}
+              onChange={(e) => onChange({ ...payload, docNumber: e.target.value })}
+              disabled={isFormDisabled}
             />
           </div>
         </div>

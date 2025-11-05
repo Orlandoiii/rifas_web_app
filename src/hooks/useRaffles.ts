@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { rafflesService } from '../services/raffles';
-import type { RaffleSummary, RaffleDetail } from '../types/raffles';
+import type { RaffleSummary, RaffleDetail, RaffleParticipant } from '../types/raffles';
 import { buildRaffleDetail } from '../utils/raffleTickets';
 
 export const QUERY_KEYS = {
@@ -8,6 +8,7 @@ export const QUERY_KEYS = {
     all: ['raffles'] as const,
     list: () => [...QUERY_KEYS.raffles.all, 'list'] as const,
     soldTickets: (id: string) => [...QUERY_KEYS.raffles.all, 'soldTickets', id] as const,
+    participants: () => [...QUERY_KEYS.raffles.all, 'participants'] as const,
   },
 };
 
@@ -65,5 +66,28 @@ export function useRaffleDetail(raffle: RaffleSummary | null) {
     isError: soldTicketsQuery.isError,
     error: soldTicketsQuery.error,
   };
+}
+
+/**
+ * Hook para crear un participante en una rifa (reservar tickets)
+ * Invalida automáticamente la cache de tickets vendidos para reflejar los cambios
+ */
+export function useCreateParticipant() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (participant: Omit<RaffleParticipant, 'participantId'>) =>
+      rafflesService.createParticipant(participant),
+    onSuccess: (_data, variables) => {
+      // Invalidar la cache de tickets vendidos para esta rifa
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.raffles.soldTickets(variables.raffleId),
+      });
+      // También invalidar la lista de rifas para actualizar el totalSold
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.raffles.list(),
+      });
+    },
+  });
 }
 

@@ -5,6 +5,7 @@ export type StepRenderArgs<T> = {
     goBack: () => void;
     index: number;
     total: number;
+    isProcessing: boolean;
 };
 
 export type Step<T> = {
@@ -37,5 +38,6 @@ export type StepperProps<T> = {
         canNext: boolean;
         goNext: () => void;
         goBack: () => void;
+        isProcessing: boolean;
     }) => React.ReactNode;
 };

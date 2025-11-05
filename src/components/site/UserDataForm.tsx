@@ -15,9 +15,12 @@ interface UserDataFormProps {
   selectedNumbers: number[];
   buyer: Buyer;
   onChange: (buyer: Buyer) => void;
+  disabled?: boolean;
 }
 
-export default function UserDataForm({ raffleTitle, price, currency, selectedNumbers, buyer, onChange }: UserDataFormProps) {
+export default function UserDataForm({ raffleTitle, price, currency,
+  selectedNumbers, buyer, onChange, disabled = false }: UserDataFormProps) {
+
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
 
   const handleField = (key: keyof Buyer) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,14 +33,19 @@ export default function UserDataForm({ raffleTitle, price, currency, selectedNum
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="text-text-primary font-semibold truncate">{raffleTitle}</div>
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="text-text-secondary">Tickets: <span className="text-text-primary font-semibold">{selectedNumbers.length}</span></span>
-            <span className="text-text-secondary">Total: <span className="text-selected font-semibold">{total.toFixed(2)} {currency}</span></span>
+            <span className="text-text-secondary">Tickets:
+              <span className="text-text-primary font-semibold">{selectedNumbers.length}</span>
+            </span>
+            <span className="text-text-secondary">Total:
+              <span className="text-selected font-semibold">{total.toFixed(2)} {currency}</span>
+            </span>
           </div>
         </div>
         {selectedNumbers?.length ? (
           <div className="mt-2 flex flex-wrap gap-2 max-h-24 overflow-auto">
-            {selectedNumbers.slice().sort((a,b)=>a-b).map(n => (
-              <span key={n} className="text-xs px-2 py-1 rounded-md bg-bg-secondary border border-border-light text-text-primary">#{n}</span>
+            {selectedNumbers.slice().sort((a, b) => a - b).map(n => (
+              <span key={n} className="text-xs px-2 py-1 rounded-md bg-bg-secondary 
+              border border-border-light text-text-primary">#{n}</span>
             ))}
           </div>
         ) : null}
@@ -47,9 +55,10 @@ export default function UserDataForm({ raffleTitle, price, currency, selectedNum
         <div>
           <div className="text-text-secondary text-sm mb-1">Cédula</div>
           <Input
-            placeholder="V12345678"
+            placeholder="12345678"
             value={buyer.id}
             onChange={handleField('id')}
+            disabled={disabled}
           />
         </div>
         <div>
@@ -58,6 +67,7 @@ export default function UserDataForm({ raffleTitle, price, currency, selectedNum
             placeholder="Juan Pérez"
             value={buyer.name}
             onChange={handleField('name')}
+            disabled={disabled}
           />
         </div>
         <div>
@@ -66,6 +76,7 @@ export default function UserDataForm({ raffleTitle, price, currency, selectedNum
             placeholder="04121234567"
             value={buyer.phone}
             onChange={handleField('phone')}
+            disabled={disabled}
           />
         </div>
         <div>
@@ -75,6 +86,7 @@ export default function UserDataForm({ raffleTitle, price, currency, selectedNum
             placeholder="correo@dominio.com"
             value={buyer.email}
             onChange={handleField('email')}
+            disabled={disabled}
           />
         </div>
       </div>

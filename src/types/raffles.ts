@@ -28,9 +28,23 @@ export interface RaffleTicket {
   status: RaffleTicketStatus;
 }
 
+export interface RaffleParticipant {
+  participantId: RaffleId;
+  raffleId: RaffleId;
+  name: string;
+  email: string;
+  phone: string;
+  ticketNumber: number[];
+}
+
+export interface RaffleParticipantResponse {
+  reserveTickets: number[];
+}
+
 export interface IRafflesService {
   getRaffles(signal?: AbortSignal): Promise<RaffleSummary[]>;
   getSoldTickets(raffleId: RaffleId, signal?: AbortSignal): Promise<number[]>;
+  createParticipant(participant: Omit<RaffleParticipant, 'participantId'>, signal?: AbortSignal): Promise<RaffleParticipantResponse>;
 }
 
 

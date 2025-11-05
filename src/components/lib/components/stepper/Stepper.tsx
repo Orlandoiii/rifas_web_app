@@ -46,6 +46,8 @@ export function Stepper<T>(props: StepperProps<T>) {
     }, [isControlled, onChange, storageKey, steps.length]);
 
     const [canNext, setCanNext] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
     const validatingRef = useRef<number>(0);
 
     useEffect(() => {
@@ -62,20 +64,42 @@ export function Stepper<T>(props: StepperProps<T>) {
         return () => { cancelled = true; };
     }, [index, data, steps]);
 
+    // Limpiar error cuando cambia el paso
+    useEffect(() => {
+        setError(null);
+    }, [index]);
+
     const goBack = useCallback(async () => {
-        await steps[index]?.onPrev?.(data);
-        setIndex(index - 1);
-    }, [index, steps, data, setIndex]);
+        if (isProcessing) return;
+        setError(null);
+        try {
+            setIsProcessing(true);
+            await steps[index]?.onPrev?.(data);
+            setIndex(index - 1);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Error al retroceder');
+        } finally {
+            setIsProcessing(false);
+        }
+    }, [index, steps, data, setIndex, isProcessing]);
 
     const goNext = useCallback(async () => {
-        if (!canNext) return;
-        if (index === steps.length - 1) {
-            await onFinish?.(data);
-            return;
+        if (!canNext || isProcessing) return;
+        setError(null);
+        try {
+            setIsProcessing(true);
+            if (index === steps.length - 1) {
+                await onFinish?.(data);
+                return;
+            }
+            await steps[index]?.onNext?.(data);
+            setIndex(index + 1);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Error al continuar');
+        } finally {
+            setIsProcessing(false);
         }
-        await steps[index]?.onNext?.(data);
-        setIndex(index + 1);
-    }, [canNext, index, steps, data, setIndex, onFinish]);
+    }, [canNext, index, steps, data, setIndex, onFinish, isProcessing]);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -98,13 +122,13 @@ export function Stepper<T>(props: StepperProps<T>) {
         : <StepperHeader current={index} total={steps.length} />;
 
     const footer = renderFooter
-        ? renderFooter({ current: index, total: steps.length, canNext, goNext, goBack })
+        ? renderFooter({ current: index, total: steps.length, canNext, goNext, goBack, isProcessing })
         : (
             <div className="mt-6 flex items-center justify-between">
-                <Button variant="secondary" onClick={goBack} disabled={index === 0}>Atrás</Button>
+                <Button variant="secondary" onClick={goBack} disabled={index === 0 || isProcessing}>Atrás</Button>
                 <div className="flex-1" />
-                <Button onClick={goNext} disabled={!canNext}>
-                    {index === steps.length - 1 ? finishLabel : 'Continuar'}
+                <Button onClick={goNext} disabled={!canNext || isProcessing}>
+                    {isProcessing ? 'Procesando...' : (index === steps.length - 1 ? finishLabel : 'Continuar')}
                 </Button>
             </div>
         );
@@ -114,6 +138,40 @@ export function Stepper<T>(props: StepperProps<T>) {
     return (
         <div className="w-full">
             {header}
+            
+            {/* Error Alert */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                        animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                                <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">Error</h3>
+                                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">{error}</p>
+                                </div>
+                                <button
+                                    onClick={() => setError(null)}
+                                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
+                                >
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="relative min-h-[180px]">
                 <AnimatePresence mode="wait" initial={false}>
                     <motion.div
@@ -131,7 +189,8 @@ export function Stepper<T>(props: StepperProps<T>) {
                             goNext,
                             goBack,
                             index,
-                            total: steps.length
+                            total: steps.length,
+                            isProcessing
                         })}
                     </motion.div>
                 </AnimatePresence>
