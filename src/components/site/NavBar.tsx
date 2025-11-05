@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '../../components/lib/components/button';
 import { useTheme } from '../../components/lib/components/theme';
 
@@ -7,31 +8,57 @@ interface NavBarProps {
 
 // Subcomponentes locales
 function Logo() {
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  const handleClick = () => {
+    setIsSpinning(true);
+    setTimeout(() => setIsSpinning(false), 600);
+  };
+
   return (
-    <div className="flex items-center justify-center">
-      <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <g fill="#00BD9C">
-          <circle cx="50" cy="25" r="18" />
+    <div className="flex items-center gap-3 cursor-pointer select-none" onClick={handleClick}>
+      <div className={`transition-transform duration-500 ease-in-out ${isSpinning ? 'rotate-360' : ''}`}>
+        <svg 
+          width="40" 
+          height="40" 
+          viewBox="0 0 100 100" 
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ transform: 'rotate(45deg)' }}
+        >
+          <g fill="var(--color-selected)">
+            <circle cx="50" cy="25" r="18" />
+            <circle cx="75" cy="50" r="18" />
+            <circle cx="50" cy="75" r="18" />
+            <circle cx="25" cy="50" r="18" />
+            <circle cx="50" cy="50" r="12" />
+            <rect x="48" y="68" width="4" height="20" rx="2" />
+          </g>
 
-          <circle cx="75" cy="50" r="18" />
-
-          <circle cx="50" cy="75" r="18" />
-
-          <circle cx="25" cy="50" r="18" />
-
-          <circle cx="50" cy="50" r="12" />
-
-          <rect x="48" y="68" width="4" height="20" rx="2" />
-        </g>
-
-        <g fill="#00E6B8" opacity="0.3">
-          <ellipse cx="45" cy="20" rx="6" ry="4" />
-          <ellipse cx="70" cy="45" rx="4" ry="6" />
-          <ellipse cx="55" cy="70" rx="6" ry="4" />
-          <ellipse cx="30" cy="55" rx="4" ry="6" />
-        </g>
-      </svg>
-
+          <g fill="var(--color-selected-light)" opacity="0.3">
+            <ellipse cx="45" cy="20" rx="6" ry="4" />
+            <ellipse cx="70" cy="45" rx="4" ry="6" />
+            <ellipse cx="55" cy="70" rx="6" ry="4" />
+            <ellipse cx="30" cy="55" rx="4" ry="6" />
+          </g>
+        </svg>
+      </div>
+      
+      <div className="flex flex-col">
+        <span className="text-sm font-semibold text-text-primary leading-tight">TuSorteo</span>
+        <span 
+          className="text-lg font-bold leading-tight"
+          style={{
+            background: 'linear-gradient(180deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            filter: 'drop-shadow(0 1px 2px rgba(255, 215, 0, 0.3))',
+            textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+          }}
+        >
+          Ganador
+        </span>
+      </div>
     </div>
   );
 }
