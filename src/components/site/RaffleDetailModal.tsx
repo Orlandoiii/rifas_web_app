@@ -6,6 +6,7 @@ import type { Step } from '../lib/components/stepper';
 import TicketSelectionForm from './TicketSelectionForm';
 import UserDataForm from './UserDataForm';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
+import OTPVerification from './payments/OTPVerification';
 import { useRaffleDetail, useCreateParticipant } from '../../hooks';
 import type { RaffleSummary } from '../../types/raffles';
 
@@ -19,11 +20,20 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
     const { data: detail, isLoading: loadingTickets, isError: errorTickets } = useRaffleDetail(open ? raffle : null);
     const createParticipant = useCreateParticipant();
     const [selected, setSelected] = useState<number[]>([]);
+    const [otpCountdown, setOtpCountdown] = useState(0);
 
     useEffect(() => {
         if (!open) return;
         setSelected([]);
+        setOtpCountdown(0);
     }, [open, raffle?.id]);
+
+    // Countdown para OTP
+    useEffect(() => {
+        if (otpCountdown <= 0) return;
+        const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [otpCountdown]);
 
     type CheckoutData = {
         buyer: { id: string; name: string; phone: string; email: string };
@@ -58,6 +68,36 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         if (!response.reserveTickets || response.reserveTickets.length === 0) {
             throw new Error('No se pudieron reservar los tickets seleccionados');
         }
+    };
+
+    // Función para generar OTP cuando el usuario avanza del paso 3 al 4
+    const handleGenerateOTP = async (): Promise<void> => {
+        // TODO: Implementar llamada al backend para generar OTP
+        // const response = await generateOTP({ ...checkout.payment });
+        
+        // Simular generación de OTP
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Iniciar countdown de 26 segundos
+        setOtpCountdown(26);
+    };
+
+    // Función para reenviar OTP
+    const handleResendOTP = async () => {
+        await handleGenerateOTP();
+    };
+
+    // Función para verificar OTP
+    const handleVerifyOTP = async (otp: string): Promise<void> => {
+        // TODO: Implementar llamada al backend para verificar OTP y procesar pago
+        console.log('Verificando OTP:', otp);
+        console.log('Datos de pago:', checkout.payment);
+        
+        // Simular verificación
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Si todo está bien, cerrar modal
+        // onClose();
     };
 
     const steps: Step<CheckoutData>[] = [
@@ -98,6 +138,10 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         {
             id: 'payment',
             title: 'Pago',
+            onNext: async () => {
+                // Generar OTP antes de avanzar al paso de verificación
+                await handleGenerateOTP();
+            },
             render: ({ data, setData, isProcessing }) => (
                 <SypagoDebit
                     raffleTitle={detail?.title || ''}
@@ -114,6 +158,22 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 d.payment.phone &&
                 d.payment.docNumber
             )
+        },
+        {
+            id: 'otp',
+            title: 'Verificación',
+            render: ({ isProcessing }) => (
+                <OTPVerification
+                    raffleTitle={detail?.title || ''}
+                    selectedNumbers={selected}
+                    price={detail?.price || 0}
+                    currency={detail?.currency || 'USD'}
+                    onVerify={handleVerifyOTP}
+                    disabled={isProcessing}
+                    countdown={otpCountdown}
+                    onResend={handleResendOTP}
+                />
+            )
         }
     ];
 
@@ -123,19 +183,33 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 steps={steps}
                 data={checkout}
                 onDataChange={(u) => setCheckout(u)}
-                finishLabel="Pagar"
-                onFinish={() => { /* TODO: enviar pago */ }}
-                renderFooter={({ current, total, canNext, goBack, goNext, isProcessing }) => (
-                    <div className="mt-6 flex items-center justify-between">
-                        <Button variant="secondary" onClick={goBack} disabled={current === 0 || isProcessing}>
-                            Atrás
-                        </Button>
-                        <div className="flex-1" />
-                        <Button onClick={goNext} disabled={!canNext || isProcessing}>
-                            {isProcessing ? 'Procesando...' : (current === total - 1 ? 'Pagar' : 'Continuar')}
-                        </Button>
-                    </div>
-                )}
+                finishLabel="Verificar"
+                onFinish={() => { /* El OTP se maneja en el componente */ }}
+                renderFooter={({ current, total, canNext, goBack, goNext, isProcessing }) => {
+                    // En el último paso (OTP), solo mostrar botón Atrás
+                    if (current === total - 1) {
+                        return (
+                            <div className="mt-6 flex items-center justify-between">
+                                <Button variant="secondary" onClick={goBack} disabled={isProcessing}>
+                                    Atrás
+                                </Button>
+                                <div className="flex-1" />
+                            </div>
+                        );
+                    }
+                    
+                    return (
+                        <div className="mt-6 flex items-center justify-between">
+                            <Button variant="secondary" onClick={goBack} disabled={current === 0 || isProcessing}>
+                                Atrás
+                            </Button>
+                            <div className="flex-1" />
+                            <Button onClick={goNext} disabled={!canNext || isProcessing}>
+                                {isProcessing ? 'Procesando...' : 'Continuar'}
+                            </Button>
+                        </div>
+                    );
+                }}
             />
         </Modal>
     );
