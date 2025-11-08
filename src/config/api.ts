@@ -6,6 +6,12 @@ export const API_ENDPOINTS = {
     soldTickets: (id: string) => `${API_BASE_URL}/raffles/${id}/tickets/sold`,
     createParticipant: () => `${API_BASE_URL}/raffles/participant`,
     verify: () => `${API_BASE_URL}/raffles/verify`,
+    mainWinners: (id: string) => `${API_BASE_URL}/raffles/${id}/winners/main`,
+    blessWinners: (id: string) => `${API_BASE_URL}/raffles/${id}/winners/bless`,
+  },
+  prizes: {
+    byRaffleAndTicket: (raffleId: string, ticketId: number) => 
+      `${API_BASE_URL}/raffles/${raffleId}/prizes/${ticketId}`,
   },
   payments: {
     banks: () => `${API_BASE_URL}/sypago/banks`,

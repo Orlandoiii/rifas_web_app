@@ -71,6 +71,22 @@ export const rafflesService: IRafflesService = {
     }
 
     return await response.json();
+  },
+
+  async getMainWinnerTickets(raffleId: string, signal?: AbortSignal): Promise<number[]> {
+    const response = await fetch(API_ENDPOINTS.raffles.mainWinners(raffleId), { signal });
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    return await response.json();
+  },
+
+  async getBlessNumberWinnerTickets(raffleId: string, signal?: AbortSignal): Promise<number[]> {
+    const response = await fetch(API_ENDPOINTS.raffles.blessWinners(raffleId), { signal });
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    return await response.json();
   }
 };
 

@@ -31,9 +31,9 @@ export default function VerifyRaffleDetails({ raffle }: VerifyRaffleDetailsProps
           alt={raffle.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/90 via-bg-primary/50 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-bg-primary/90 via-bg-primary/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white font-bold mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">
             {raffle.title}
           </h1>
           <p className="text-sm sm:text-base text-text-secondary">
@@ -94,7 +94,7 @@ export default function VerifyRaffleDetails({ raffle }: VerifyRaffleDetailsProps
           </div>
           <div className="w-full h-3 bg-bg-tertiary rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-mint-main to-mint-dark transition-all duration-500"
+              className="h-full bg-linear-to-r from-mint-main to-mint-dark transition-all duration-500"
               style={{ width: `${soldPct}%` }}
             />
           </div>
