@@ -3,6 +3,7 @@ import { Button } from '../../components/lib/components/button';
 import { Loader } from '../../components/lib/components/loader';
 import { useTheme } from '../../components/lib/components/theme';
 import type { RaffleSummary } from '../../types/raffles';
+import { isRaffleFinished } from '../../utils/raffles';
 
 
 function useResolvedTheme(theme: 'dark' | 'light' | 'system') {
@@ -61,13 +62,9 @@ function Chip({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
-function BuyButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Button onClick={onClick} className="w-full md:w-auto lg:text-base lg:h-12 lg:px-8">Comprar ahora</Button>
-  );
-}
+function RaffleDetails({ raffle, timeLeft, onBuy, onVerify }: { raffle: RaffleSummary; timeLeft: string; onBuy: () => void; onVerify: () => void }) {
+  const isFinished = isRaffleFinished(raffle);
 
-function RaffleDetails({ raffle, timeLeft, onBuy }: { raffle: RaffleSummary; timeLeft: string; onBuy: () => void }) {
   return (
     <div className="text-center">
       <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold drop-shadow">{raffle.title}</h2>
@@ -78,8 +75,32 @@ function RaffleDetails({ raffle, timeLeft, onBuy }: { raffle: RaffleSummary; tim
         <Chip className="text-selected font-semibold text-base md:text-lg bg-bg-secondary/70 backdrop-blur-md">{raffle.price.toFixed(2)} {raffle.currency} / ticket</Chip>
         <Chip className="text-text-primary text-sm md:text-base bg-bg-secondary/70 backdrop-blur-md">Finaliza en: <span className="font-semibold text-selected">{timeLeft}</span></Chip>
       </div>
-      <div className="mt-6">
-        <BuyButton onClick={onBuy} />
+      <div className="mt-6 flex flex-col items-center gap-3">
+        {isFinished ? (
+          <Button 
+            onClick={onVerify} 
+            className="w-full md:w-auto lg:text-base lg:h-12 lg:px-8"
+            variant="secondary"
+          >
+            Verificar
+          </Button>
+        ) : (
+          <>
+            <Button 
+              onClick={onBuy} 
+              className="w-full md:w-auto lg:text-base lg:h-12 lg:px-8"
+            >
+              Comprar ahora
+            </Button>
+            <Button 
+              onClick={onVerify} 
+              className="w-full md:w-auto lg:text-base lg:h-12 lg:px-8"
+              variant="secondary"
+            >
+              Verificar
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -90,9 +111,10 @@ interface HeroProps {
   isLoading?: boolean;
   isError?: boolean;
   onBuy: () => void;
+  onVerify: () => void;
 }
 
-export default function Hero({ raffle, isLoading = false, isError = false, onBuy }: HeroProps) {
+export default function Hero({ raffle, isLoading = false, isError = false, onBuy, onVerify }: HeroProps) {
   const { theme } = useTheme();
   const timeLeft = useCountdown(raffle?.endsAt);
   const resolvedTheme = useResolvedTheme(theme);
@@ -121,7 +143,7 @@ export default function Hero({ raffle, isLoading = false, isError = false, onBuy
               <p className="text-text-muted text-xs mt-1">Por favor, intenta recargar la página.</p>
             </div>
           ) : raffle ? (
-            <RaffleDetails raffle={raffle} timeLeft={timeLeft} onBuy={onBuy} />
+            <RaffleDetails raffle={raffle} timeLeft={timeLeft} onBuy={onBuy} onVerify={onVerify} />
           ) : (
             <div className="text-center py-8 bg-bg-secondary/80 border border-border-light rounded-2xl p-5 max-w-xl mx-auto">
               <p className="text-text-secondary text-sm">No hay rifas disponibles en este momento.</p>

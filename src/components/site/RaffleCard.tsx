@@ -1,14 +1,16 @@
 import { Button } from '../../components/lib/components/button';
 import type { RaffleSummary } from '../../types/raffles';
 import { useCountdown } from './Hero';
+import { isRaffleFinished } from '../../utils/raffles';
 
 interface RaffleCardProps {
   raffle: RaffleSummary;
   variant?: 'single' | 'carousel';
   onDetails?: (raffle: RaffleSummary) => void;
+  onVerify?: (raffle: RaffleSummary) => void;
 }
 
-export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails }: RaffleCardProps) {
+export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails, onVerify }: RaffleCardProps) {
   const imgW = variant === 'single' ? 'w-[92vw] sm:w-[360px] md:w-[520px]' : 'w-[300px] md:w-[360px]';
   const imgH = variant === 'single' ? 'h-[60vw] sm:h-64 md:h-80' : 'h-52 md:h-64';
   const bodyW = variant === 'single' ? 'w-[92vw] sm:w-[360px] md:w-[520px]' : 'w-[300px] md:w-[360px]';
@@ -16,6 +18,7 @@ export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails 
   const soldPct = Math.round((r.totalSold / Math.max(1, r.ticketsTotal)) * 100);
   const available = Math.max(0, r.ticketsTotal - r.totalSold);
   const timeLeft = useCountdown(r.endsAt);
+  const isFinished = isRaffleFinished(r);
 
   return (
     <article className="bg-bg-secondary border border-border-light rounded-xl overflow-hidden shadow">
@@ -39,7 +42,31 @@ export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails 
           <div className="text-text-muted text-xs mt-1">{available.toLocaleString()} disponibles</div>
         </div>
         <div className="mt-3">
-          <Button className="w-full" onClick={() => onDetails?.(r)}>Ver detalles</Button>
+          {isFinished ? (
+            <Button 
+              className="w-full" 
+              onClick={() => onVerify?.(r)}
+              variant="secondary"
+            >
+              Verificar
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button 
+                className="flex-1" 
+                onClick={() => onDetails?.(r)}
+              >
+                Comprar
+              </Button>
+              <Button 
+                className="flex-1" 
+                onClick={() => onVerify?.(r)}
+                variant="secondary"
+              >
+                Verificar
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </article>
