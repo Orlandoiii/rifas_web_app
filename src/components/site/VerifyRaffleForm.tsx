@@ -19,7 +19,6 @@ interface VerifyRaffleFormProps {
 export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }: VerifyRaffleFormProps) {
   const [documentId, setDocumentId] = useState(initialDocumentId || '');
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
-  const [viewedPrizes, setViewedPrizes] = useState<Set<number>>(new Set());
   
   const { verify, getPrizeForTicket, reset, isVerifying, error, result } = useVerifyRaffle();
   const hasAutoVerified = useRef(false);
@@ -39,7 +38,6 @@ export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }:
       return;
     }
 
-    setViewedPrizes(new Set()); // Reset viewed prizes
     await verify(raffle, documentId);
   };
 
@@ -53,8 +51,6 @@ export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }:
     if (prize) {
       console.log('Premio obtenido exitosamente:', prize);
       setSelectedPrize(prize);
-      // Marcar el ticket como visto
-      setViewedPrizes(prev => new Set(prev).add(ticket.ticketNumber));
     } else {
       console.warn('No se pudo obtener el premio para el ticket:', ticket.ticketNumber);
     }
@@ -67,7 +63,6 @@ export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }:
   const handleCloseResultModal = () => {
     reset();
     setDocumentId(initialDocumentId || '');
-    setViewedPrizes(new Set());
     hasAutoVerified.current = false; // Permitir nueva verificación automática si hay initialDocumentId
   };
 
@@ -190,7 +185,7 @@ export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }:
             </div>
             <VerifyResultWithPrizes
               allTickets={result.tickets}
-              winningTickets={result.winningTickets.filter(t => !viewedPrizes.has(t.ticketNumber))}
+              winningTickets={result.winningTickets}
               onTicketClick={handleTicketClick}
             />
           </div>
