@@ -9,6 +9,7 @@ export interface Prize {
   title: string;
   shortDescription: string;
   winningTicket: number;
+  isMainPrize?: boolean;
 }
 
 export interface IPrizesService {

@@ -26,6 +26,8 @@ export interface RaffleTicket {
   raffleId: RaffleId;
   number: number;
   status: RaffleTicketStatus;
+  isMainPrize?: boolean;
+  isBlessNumber?: boolean;
 }
 
 export interface RaffleParticipant {
@@ -42,10 +44,30 @@ export interface RaffleParticipantResponse {
   bookingId: string;
 }
 
+export interface RaffleVerifyRequest {
+  raffleId: RaffleId;
+  documentId: string;
+}
+
+export interface RaffleVerifyTicket {
+  ticketNumber: number;
+  isMainPrize?: boolean;
+  isBlessNumber?: boolean;
+}
+
+export interface RaffleVerifyResult {
+  raffleId: RaffleId;
+  documentId: string;
+  boughtTickets: RaffleVerifyTicket[];
+  
+}
+
+
 export interface IRafflesService {
   getRaffles(signal?: AbortSignal): Promise<RaffleSummary[]>;
   getSoldTickets(raffleId: RaffleId, signal?: AbortSignal): Promise<number[]>;
   createParticipant(participant: RaffleParticipant, signal?: AbortSignal): Promise<RaffleParticipantResponse>;
+  verifyRaffle(request: RaffleVerifyRequest, signal?: AbortSignal): Promise<RaffleVerifyResult>;
 }
 
 

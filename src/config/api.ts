@@ -5,6 +5,7 @@ export const API_ENDPOINTS = {
     list: () => `${API_BASE_URL}/raffles`,
     soldTickets: (id: string) => `${API_BASE_URL}/raffles/${id}/tickets/sold`,
     createParticipant: () => `${API_BASE_URL}/raffles/participant`,
+    verify: () => `${API_BASE_URL}/raffles/verify`,
   },
   payments: {
     banks: () => `${API_BASE_URL}/sypago/banks`,

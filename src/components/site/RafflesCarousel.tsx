@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, type PanInfo } from 'framer-motion';
 import { Loader } from '../lib/components/loader';
 import RaffleCard from './RaffleCard';
 import RaffleDetailModal from './RaffleDetailModal';
-import PrizeWinnerModal from './PrizeWinnerModal';
 import type { RaffleSummary } from '../../types/raffles';
-import { isRaffleFinished } from '../../utils/raffles';
 
 interface RafflesCarouselProps {
   raffles: RaffleSummary[];
@@ -14,16 +13,14 @@ interface RafflesCarouselProps {
 }
 
 export default function RafflesCarousel({ raffles, isLoading = false, isError = false }: RafflesCarouselProps) {
+  const navigate = useNavigate();
   const items = useMemo(() => raffles || [], [raffles]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedRaffle, setSelectedRaffle] = useState<RaffleSummary | null>(null);
-  const [verifyingRaffle, setVerifyingRaffle] = useState<RaffleSummary | null>(null);
   const swipeThreshold = 50;
 
   const handleVerify = (raffle: RaffleSummary) => {
-    // TODO: Implementar lógica de verificación de resultados
-    // Por ahora, solo abrimos el modal de verificación
-    setVerifyingRaffle(raffle);
+    navigate(`/verificar/${raffle.id}`);
   };
 
   const goPrev = () => setActiveIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
@@ -133,24 +130,6 @@ export default function RafflesCarousel({ raffles, isLoading = false, isError = 
         open={!!selectedRaffle}
         onClose={() => setSelectedRaffle(null)}
       />
-      
-      {/* Modal de verificación - TODO: Implementar vista de resultados */}
-      {verifyingRaffle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setVerifyingRaffle(null)}>
-          <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4 border border-border-light" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-text-primary mb-2">Verificar Resultados</h3>
-            <p className="text-text-secondary mb-4">
-              La funcionalidad de verificación de resultados estará disponible próximamente.
-            </p>
-            <button
-              onClick={() => setVerifyingRaffle(null)}
-              className="w-full px-4 py-2 bg-mint-main hover:bg-mint-dark text-white rounded-lg transition-colors"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
