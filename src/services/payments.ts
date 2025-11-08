@@ -54,6 +54,7 @@ export interface TransactionStatusResponse {
   ref_ibp: string;
   status: string;  // Puede ser cualquier string del backend
   rsn: string;
+  bless_numbers?: number[];
 }
 
 export async function requestDebitOtp(payload: RequestOtpPayload): Promise<void> {

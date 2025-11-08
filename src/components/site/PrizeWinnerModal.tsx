@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Sparkles, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Trophy, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Modal from '../lib/components/modal/core/Modal';
 import { Button } from '../lib/components/button';

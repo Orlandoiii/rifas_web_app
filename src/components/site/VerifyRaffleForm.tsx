@@ -46,7 +46,12 @@ export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }:
     console.log('Es MainPrize:', ticket.isMainPrize);
     console.log('Es BlessNumber:', ticket.isBlessNumber);
     
-    const prize = await getPrizeForTicket(raffle, ticket);
+    if (!documentId.trim()) {
+      console.warn('No hay documentId disponible para buscar el premio');
+      return;
+    }
+    
+    const prize = await getPrizeForTicket(raffle, ticket, documentId.trim());
     
     if (prize) {
       console.log('Premio obtenido exitosamente:', prize);

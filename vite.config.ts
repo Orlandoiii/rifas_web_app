@@ -12,8 +12,11 @@ export default defineConfig({
     }),
     tailwindcss()
   ],
+  build: {
+    outDir: './server/bin/web',
+    emptyOutDir: true,
+  },
   server: {
-    // Exponer en toda la LAN para depurar desde el teléfono
     host: true, // equivalente a '0.0.0.0'
     port: 5173,
   },

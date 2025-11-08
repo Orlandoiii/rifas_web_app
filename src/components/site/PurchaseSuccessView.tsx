@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Check, Copy, Download } from 'lucide-react';
+import { Check, Copy, Download, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import Modal from '../lib/components/modal/core/Modal';
 import { Button } from '../lib/components/button';
+import PrizeWinnerModal from './PrizeWinnerModal';
+import { prizesService } from '../../services/prizes';
 import type { RaffleSummary } from '../../types/raffles';
+import type { Prize } from '../../types/prizes';
 
 export interface PurchaseSuccessData {
   // IDs de transacción
@@ -26,6 +29,9 @@ export interface PurchaseSuccessData {
   
   // Tickets comprados
   tickets: number[];
+  
+  // Bless numbers ganadores (opcional)
+  blessNumbers?: number[];
   
   // Monto pagado
   amount: number;
@@ -111,6 +117,8 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
   if (!data) return null;
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
+  const [isLoadingPrize, setIsLoadingPrize] = useState(false);
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('es-VE', {
@@ -125,6 +133,26 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       dateStyle: 'full',
       timeStyle: 'short',
     }).format(new Date());
+  };
+
+  const handleBlessNumberClick = async (blessNumber: number) => {
+    setIsLoadingPrize(true);
+    try {
+      const prize = await prizesService.getPrizeByRaffleIdAndTicketId(
+        data.raffle.id,
+        blessNumber,
+        data.buyer.id
+      );
+      if (prize) {
+        setSelectedPrize(prize);
+      } else {
+        console.warn('No se encontró premio para el bless number:', blessNumber);
+      }
+    } catch (error) {
+      console.error('Error al obtener premio bless:', error);
+    } finally {
+      setIsLoadingPrize(false);
+    }
   };
 
   const generatePDF = async () => {
@@ -293,6 +321,36 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       pdf.text(`Total: ${data.tickets.length} ticket${data.tickets.length > 1 ? 's' : ''}`, margin, yPos);
       yPos += 10;
 
+      // ============ NÚMEROS BLESS GANADORES ============
+      if (data.blessNumbers && data.blessNumbers.length > 0) {
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 6;
+
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(27, 160, 136); // Verde menta
+        pdf.text('NÚMEROS BENDITOS GANADORES', margin, yPos);
+        yPos += 6;
+
+        // Dibujar números bless
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(27, 160, 136); // Verde menta
+        
+        const blessText = data.blessNumbers.join('  •  ');
+        const blessLines = pdf.splitTextToSize(blessText, contentWidth);
+        pdf.text(blessLines, margin, yPos);
+        yPos += blessLines.length * 7 + 3;
+
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`Total: ${data.blessNumbers.length} número${data.blessNumbers.length > 1 ? 's' : ''} bless`, margin, yPos);
+        yPos += 10;
+      }
+
       // ============ REFERENCIAS DE TRANSACCIÓN ============
       pdf.setDrawColor(200, 200, 200);
       pdf.setLineWidth(0.3);
@@ -376,6 +434,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
   };
 
   return (
+    <>
     <Modal 
       open={open} 
       onClose={onClose} 
@@ -482,6 +541,42 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
           </div>
         </div>
 
+        {/* Bless Numbers ganadores */}
+        {data.blessNumbers && data.blessNumbers.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-text-primary mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-mint-main" />
+                <span>¡Números Benditos Ganadores!</span>
+              </div>
+            </h3>
+            <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
+              <p className="text-xs sm:text-sm text-text-secondary mb-3 text-center">
+                Haz click en un número para ver los detalles del premio
+              </p>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
+                {data.blessNumbers.map((blessNumber, index) => (
+                  <motion.button
+                    key={blessNumber}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + index * 0.05 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleBlessNumberClick(blessNumber)}
+                    disabled={isLoadingPrize}
+                    className="w-12 h-12 sm:w-16 sm:h-16 bg-mint-main/20 border-2 border-mint-main rounded-lg flex items-center justify-center shadow-lg hover:bg-mint-main/30 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="text-lg sm:text-2xl font-bold text-mint-main">
+                      {blessNumber}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Monto pagado */}
         <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -545,5 +640,13 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
           </Button>
         </div>
     </Modal>
+
+    {/* Modal de premio bless */}
+    <PrizeWinnerModal
+      prize={selectedPrize}
+      open={!!selectedPrize}
+      onClose={() => setSelectedPrize(null)}
+    />
+    </>
   );
 }

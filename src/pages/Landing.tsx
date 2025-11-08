@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy } from 'lucide-react';
+// import { Trophy } from 'lucide-react';
 import NavBar from '../components/site/NavBar';
 import Hero from '../components/site/Hero';
 import RafflesCarousel from '../components/site/RafflesCarousel';
@@ -65,13 +65,13 @@ export default function Landing() {
       />
       
       {/* Botón flotante de prueba */}
-      <button
+      {/* <button
         onClick={() => setShowPrizeModal(true)}
         className="fixed bottom-6 right-6 w-14 h-14 bg-binance-main hover:bg-binance-dark text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-50 group"
         title="Ver premio (testing)"
       >
         <Trophy className="w-6 h-6 group-hover:scale-110 transition-transform" />
-      </button>
+      </button> */}
     </div>
   );
 }

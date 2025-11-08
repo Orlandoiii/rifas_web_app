@@ -18,7 +18,7 @@ export default function PurchaseCard({ purchase, onViewDetails, onVerify }: Purc
     }).format(amount);
   };
 
-  const formatDate = (transactionId: string) => {
+  const formatDate = () => {
     // Intentar extraer fecha del transactionId o usar fecha actual
     // Por ahora, usamos la fecha actual como placeholder
     return new Intl.DateTimeFormat('es-VE', {
@@ -67,7 +67,7 @@ export default function PurchaseCard({ purchase, onViewDetails, onVerify }: Purc
           <div className="min-w-0">
             <p className="text-xs text-text-muted">Fecha</p>
             <p className="text-sm font-semibold text-text-primary truncate">
-              {formatDate(purchase.transactionId)}
+              {formatDate()}
             </p>
           </div>
         </div>

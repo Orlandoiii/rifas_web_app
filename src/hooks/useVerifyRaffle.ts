@@ -46,9 +46,9 @@ export function useVerifyRaffle() {
       const winningTickets = verifyResult.boughtTickets.filter(
         t => t.isMainPrize || t.isBlessNumber
       );
-      const regularTickets = verifyResult.boughtTickets.filter(
-        t => !t.isMainPrize && !t.isBlessNumber
-      );
+      // const regularTickets = verifyResult.boughtTickets.filter(
+      //   t => !t.isMainPrize && !t.isBlessNumber
+      // );
 
       // Escenario 3: Tiene tickets con premios
       if (winningTickets.length > 0) {
@@ -119,7 +119,8 @@ export function useVerifyRaffle() {
 
   const getPrizeForTicket = useCallback(async (
     raffle: RaffleSummary,
-    ticket: RaffleVerifyTicket
+    ticket: RaffleVerifyTicket,
+    documentId: string
   ): Promise<Prize | null> => {
     try {
       if (ticket.isMainPrize) {
@@ -140,10 +141,11 @@ export function useVerifyRaffle() {
 
       if (ticket.isBlessNumber) {
         // Para bless numbers, obtener del servicio
-        console.log('Obteniendo premio bless para ticket:', ticket.ticketNumber, 'en rifa:', raffle.id);
+        console.log('Obteniendo premio bless para ticket:', ticket.ticketNumber, 'en rifa:', raffle.id, 'documentId:', documentId);
         const blessPrize = await prizesService.getPrizeByRaffleIdAndTicketId(
           raffle.id,
-          ticket.ticketNumber
+          ticket.ticketNumber,
+          documentId
         );
         console.log('Premio bless obtenido:', blessPrize);
         

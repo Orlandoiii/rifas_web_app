@@ -6,9 +6,10 @@ export const prizesService: IPrizesService = {
   async getPrizeByRaffleIdAndTicketId(
     raffleId: RaffleId,
     ticketId: number,
+    documentId: string,
     signal?: AbortSignal
   ): Promise<Prize | null> {
-    const url = API_ENDPOINTS.prizes.byRaffleAndTicket(raffleId, ticketId);
+    const url = API_ENDPOINTS.prizes.byRaffleAndTicket(raffleId, ticketId, documentId);
     console.log('Buscando premio bless en:', url);
     
     const response = await fetch(url, { signal });

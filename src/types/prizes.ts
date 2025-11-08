@@ -15,7 +15,8 @@ export interface Prize {
 export interface IPrizesService {
   getPrizeByRaffleIdAndTicketId(
     raffleId: RaffleId, 
-    ticketId: number, 
+    ticketId: number,
+    documentId: string,
     signal?: AbortSignal
   ): Promise<Prize | null>;
   

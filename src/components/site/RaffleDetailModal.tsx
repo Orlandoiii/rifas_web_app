@@ -267,6 +267,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     id: checkout.buyer.id,
                 },
                 tickets: selected,
+                blessNumbers: result.bless_numbers, // Agregar bless numbers si vienen del backend
                 amount: amount,
                 currency: detail.currency || 'USD',
             };
