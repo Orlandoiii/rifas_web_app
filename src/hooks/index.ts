@@ -2,4 +2,5 @@ export { useRaffles, useRaffleDetail, useSoldTickets, useCreateParticipant, getM
 export { useBanks, PAYMENT_QUERY_KEYS } from './usePayments';
 export { useParticipant } from './useParticipant';
 export type { ParticipantData } from './useParticipant';
+export { usePurchases } from './usePurchases';
 

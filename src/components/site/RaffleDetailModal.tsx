@@ -8,7 +8,7 @@ import UserDataForm from './UserDataForm';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
 import OTPVerification from './payments/OTPVerification';
 import PurchaseSuccessView, { type PurchaseSuccessData } from './PurchaseSuccessView';
-import { useRaffleDetail, useCreateParticipant, useParticipant } from '../../hooks';
+import { useRaffleDetail, useCreateParticipant, useParticipant, usePurchases } from '../../hooks';
 import type { RaffleSummary } from '../../types/raffles';
 import { requestDebitOtp, processDebit, pollTransactionStatus } from '../../services/payments';
 
@@ -25,6 +25,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
     const createParticipant = useCreateParticipant();
 
     const { participant, saveParticipant, updateParticipant, clearParticipant } = useParticipant();
+    const { savePurchase } = usePurchases();
 
     const [selected, setSelected] = useState<number[]>([]);
 
@@ -271,6 +272,9 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
             };
 
             console.log('Pago exitoso. Referencia:', result.ref_ibp);
+
+            // Guardar la compra en localStorage
+            savePurchase(successData);
 
             // Primero cerrar el modal de detalle
             onClose();

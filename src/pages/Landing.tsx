@@ -28,19 +28,21 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary">
+    <div className="min-h-screen bg-bg-primary text-text-primary flex flex-col">
       <NavBar />
-      <Hero 
-        raffle={mainRaffle} 
-        isLoading={isLoading}
-        isError={isError}
-        onBuy={() => mainRaffle && setSelectedRaffle(mainRaffle)} 
-      />
-      <RafflesCarousel 
-        raffles={raffles || []} 
-        isLoading={isLoading}
-        isError={isError}
-      />
+      <div className="flex-1">
+        <Hero 
+          raffle={mainRaffle} 
+          isLoading={isLoading}
+          isError={isError}
+          onBuy={() => mainRaffle && setSelectedRaffle(mainRaffle)} 
+        />
+        <RafflesCarousel 
+          raffles={raffles || []} 
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
       <Footer />
       <RaffleDetailModal 
         raffle={selectedRaffle} 

@@ -46,28 +46,56 @@ interface CopyButtonProps {
 function CopyButton({ value, label }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Intentar con la API moderna del clipboard
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        // Fallback para navegadores que no soportan clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = value;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+          console.error('Fallback: Error al copiar', err);
+        }
+        
+        document.body.removeChild(textArea);
+      }
     } catch (error) {
       console.error('Error al copiar:', error);
     }
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 p-3 bg-bg-secondary rounded-lg border border-border-light">
-      <div className="flex-1 min-w-0">
+    <div className="flex items-center justify-between gap-2 p-2.5 sm:p-3 bg-bg-secondary rounded-lg border border-border-light">
+      <div className="flex-1 min-w-0 overflow-hidden">
         <p className="text-xs text-text-muted mb-1 font-medium">{label}</p>
-        <p className="text-sm font-mono font-semibold text-text-primary truncate">
+        <p className="text-xs sm:text-sm font-mono font-semibold text-text-primary truncate break-all">
           {value}
         </p>
       </div>
       <button
+        type="button"
         onClick={handleCopy}
-        className="shrink-0 p-2 rounded-lg transition-colors bg-bg-tertiary hover:bg-selected/20"
+        className="shrink-0 p-2 sm:p-2.5 rounded-lg transition-colors bg-bg-tertiary hover:bg-selected/20 active:bg-selected/30 touch-manipulation"
         title={copied ? 'Copiado' : 'Copiar'}
+        aria-label={copied ? 'Copiado' : 'Copiar al portapapeles'}
       >
         {copied ? (
           <Check className="w-5 h-5 text-state-success" />
@@ -357,7 +385,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       closeOnBackdropClick={false}
     >
       {/* Contenido del modal */}
-      <div className="space-y-6">
+      <div className="space-y-6 overflow-x-hidden">
         {/* Header con ícono de éxito y fecha */}
         <div className="text-center">
           <motion.div
@@ -427,17 +455,17 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
           <h3 className="text-lg font-semibold text-text-primary mb-3">
             Tus Números de la Suerte
           </h3>
-          <div className="bg-bg-tertiary rounded-xl p-4 border-2 border-binance-main">
-            <div className="flex flex-wrap gap-2 justify-center">
+          <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-binance-main">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
               {data.tickets.map((ticket, index) => (
                 <motion.div
                   key={ticket}
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 + index * 0.05 }}
-                  className="w-16 h-16 bg-binance-main rounded-lg flex items-center justify-center shadow-lg border-2 border-binance-dark"
+                  className="w-12 h-12 sm:w-16 sm:h-16 bg-binance-main rounded-lg flex items-center justify-center shadow-lg border-2 border-binance-dark"
                 >
-                  <span className="text-2xl font-bold text-white">
+                  <span className="text-lg sm:text-2xl font-bold text-white">
                     {ticket}
                   </span>
                 </motion.div>
@@ -455,12 +483,12 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         </div>
 
         {/* Monto pagado */}
-        <div className="bg-bg-tertiary rounded-xl p-4 border-2 border-mint-main">
-          <div className="flex justify-between items-center">
+        <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
             <span className="text-sm font-semibold text-text-secondary">
               Monto Total Pagado:
             </span>
-            <span className="text-2xl font-bold text-mint-main">
+            <span className="text-xl sm:text-2xl font-bold text-mint-main">
               {formatCurrency(data.amount, data.currency)}
             </span>
           </div>
@@ -488,8 +516,8 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         </div>
 
         {/* Mensaje informativo */}
-        <div className="bg-bg-tertiary border-2 border-state-info rounded-lg p-4">
-          <p className="text-sm text-text-primary text-center font-medium">
+        <div className="bg-bg-tertiary border-2 border-state-info rounded-lg p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-text-primary text-center font-medium">
             <strong className="font-bold text-state-info">¡Importante!</strong> Guarda estas referencias para cualquier consulta futura.
             Al cerrar esta ventana se descargará automáticamente un comprobante en PDF.
           </p>
@@ -498,11 +526,11 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       {/* Fin del contenido del modal */}
 
       {/* Botones de acción */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6">
           <Button
             onClick={generatePDF}
             variant="secondary"
-            className="flex-1"
+            className="flex-1 w-full"
             disabled={isGeneratingPDF}
           >
             <Download className="w-4 h-4 mr-2" />
@@ -510,7 +538,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
           </Button>
           <Button
             onClick={handleClose}
-            className="flex-1"
+            className="flex-1 w-full"
             disabled={isGeneratingPDF}
           >
             Entendido
