@@ -86,7 +86,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
 
   return (
     <div 
-      className={cn('group relative', containerClassName)}
+      className={cn('group relative flex flex-col', containerClassName)}
       data-filled={!!value}
       data-focused={isFocused}
     >
@@ -109,7 +109,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
         </label>
       )}
       
-      <div className="relative">
+      <div className="relative flex items-center">
         <select
           ref={ref}
           value={value}

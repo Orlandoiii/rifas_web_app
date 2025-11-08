@@ -90,7 +90,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
         return (
             <div
-                className={cn('group relative', containerClassName)}
+                className={cn('group relative flex flex-col', containerClassName)}
                 data-filled={isFilled}
             >
                 {label && (
@@ -104,7 +104,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         {label}
                     </Label>
                 )}
-                <div className="relative">
+                <div className="relative flex items-center">
                     <input
                         id={id}
                         ref={ref}

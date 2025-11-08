@@ -311,7 +311,38 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         {
             id: 'userdata',
             title: 'Tus datos',
-            validate: (d) => Boolean(d.buyer.id && d.buyer.name && d.buyer.phone && d.buyer.email),
+            validate: (d) => {
+                // Validaciones estrictas
+                const id = d.buyer.id?.trim() || '';
+                const name = d.buyer.name?.trim() || '';
+                const phone = d.buyer.phone?.trim() || '';
+                const email = d.buyer.email?.trim() || '';
+                
+                // Cédula: solo números, 6-10 dígitos
+                if (!id || !/^\d+$/.test(id) || id.length < 6 || id.length > 10) {
+                    return false;
+                }
+                
+                // Nombre: solo letras, máximo un espacio
+                const spaceCount = (name.match(/\s/g) || []).length;
+                if (!name || spaceCount > 1 || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(name)) {
+                    return false;
+                }
+                
+                // Teléfono: regex específico
+                const PHONE_REGEX = /^(?:(?:0)?414|(?:0)?424|(?:0)?412|(?:0)?416|(?:0)?426|(?:0)?422)\d{7}$/;
+                if (!phone || !PHONE_REGEX.test(phone)) {
+                    return false;
+                }
+                
+                // Email: formato válido
+                const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email || !EMAIL_REGEX.test(email)) {
+                    return false;
+                }
+                
+                return true;
+            },
             onNext: async () => {
                 // Reservar tickets antes de avanzar al paso de pago
                 await handleReserveTickets();
@@ -348,11 +379,42 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     disabled={isProcessing}
                 />
             ),
-            validate: (d) => Boolean(
-                d.payment.bankCode &&
-                d.payment.phone &&
-                d.payment.docNumber
-            )
+            validate: (d) => {
+                // Validaciones estrictas
+                const bankCode = d.payment.bankCode?.trim() || '';
+                const phone = d.payment.phone?.trim() || '';
+                const docNumber = d.payment.docNumber?.trim() || '';
+                const docType = d.payment.docType;
+                
+                if (!bankCode) {
+                    return false;
+                }
+                
+                // Teléfono: regex específico
+                const PHONE_REGEX = /^(?:(?:0)?414|(?:0)?424|(?:0)?412|(?:0)?416|(?:0)?426|(?:0)?422)\d{7}$/;
+                if (!phone || !PHONE_REGEX.test(phone)) {
+                    return false;
+                }
+                
+                // Documento: validación según tipo
+                if (!docNumber) {
+                    return false;
+                }
+                if (docType !== 'P' && !/^\d+$/.test(docNumber)) {
+                    return false;
+                }
+                if (docType === 'V' || docType === 'E') {
+                    if (docNumber.length < 6 || docNumber.length > 10) {
+                        return false;
+                    }
+                } else if (docType === 'J') {
+                    if (docNumber.length < 8 || docNumber.length > 12) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
         },
         {
             id: 'otp',
