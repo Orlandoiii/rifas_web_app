@@ -272,13 +272,13 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
 
             console.log('Pago exitoso. Referencia:', result.ref_ibp);
 
-            // Primero mostrar la vista de éxito
-            setPurchaseSuccess(successData);
+            // Primero cerrar el modal de detalle
+            onClose();
             
-            // Luego cerrar el modal con un pequeño delay para que React renderice la vista de éxito
+            // Esperar a que el modal se cierre completamente (animación) antes de mostrar el de éxito
             setTimeout(() => {
-                onClose();
-            }, 100);
+                setPurchaseSuccess(successData);
+            }, 300);
         } else if (result.finalStatus === 'RJCT') {
             // Pago rechazado - mostrar razón
             throw new Error(result.rsn || 'El pago fue rechazado. Por favor, verifique sus datos e intente nuevamente.');

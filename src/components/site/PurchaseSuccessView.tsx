@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
+import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 import Modal from '../lib/components/modal/core/Modal';
 import { Button } from '../lib/components/button';
 import type { RaffleSummary } from '../../types/raffles';
@@ -55,22 +57,22 @@ function CopyButton({ value, label }: CopyButtonProps) {
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="flex items-center justify-between gap-3 p-3 bg-bg-secondary rounded-lg border border-border-light">
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-        <p className="text-sm font-mono font-medium text-gray-900 dark:text-gray-100 truncate">
+        <p className="text-xs text-text-muted mb-1 font-medium">{label}</p>
+        <p className="text-sm font-mono font-semibold text-text-primary truncate">
           {value}
         </p>
       </div>
       <button
         onClick={handleCopy}
-        className="shrink-0 p-2 rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
+        className="shrink-0 p-2 rounded-lg transition-colors bg-bg-tertiary hover:bg-selected/20"
         title={copied ? 'Copiado' : 'Copiar'}
       >
         {copied ? (
-          <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <Check className="w-5 h-5 text-state-success" />
         ) : (
-          <Copy className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <Copy className="w-5 h-5 text-text-secondary" />
         )}
       </button>
     </div>
@@ -79,6 +81,8 @@ function CopyButton({ value, label }: CopyButtonProps) {
 
 export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuccessViewProps) {
   if (!data) return null;
+
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('es-VE', {
@@ -95,6 +99,254 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
     }).format(new Date());
   };
 
+  const generatePDF = async () => {
+    setIsGeneratingPDF(true);
+
+    try {
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 15;
+      const contentWidth = pageWidth - (margin * 2);
+      let yPos = margin;
+
+      // ============ ENCABEZADO CON LOGO ============
+      // Dibujar trébol (4 círculos formando un trébol)
+      const logoX = 25;
+      const logoY = 25;
+      const leafSize = 4;
+      
+      pdf.setFillColor(27, 160, 136); // Verde menta
+      // Hoja superior
+      pdf.circle(logoX, logoY - leafSize, leafSize, 'F');
+      // Hoja izquierda
+      pdf.circle(logoX - leafSize, logoY, leafSize, 'F');
+      // Hoja derecha
+      pdf.circle(logoX + leafSize, logoY, leafSize, 'F');
+      // Hoja inferior (más pequeña para el tallo)
+      pdf.circle(logoX, logoY + leafSize, leafSize, 'F');
+      // Tallo
+      pdf.setLineWidth(1.5);
+      pdf.setDrawColor(27, 160, 136);
+      pdf.line(logoX, logoY + leafSize, logoX, logoY + leafSize + 3);
+
+      // Nombre de la empresa
+      pdf.setTextColor(27, 160, 136);
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('TuSorteoGanador', 40, 23);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('Tu oportunidad de ganar', 40, 29);
+
+      // Línea divisoria
+      pdf.setDrawColor(27, 160, 136);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, 38, pageWidth - margin, 38);
+
+      yPos = 48;
+
+      // ============ TÍTULO DEL COMPROBANTE ============
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('COMPROBANTE DE COMPRA', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 6;
+      
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(formatDate(), pageWidth / 2, yPos, { align: 'center' });
+      yPos += 12;
+
+      // ============ INFORMACIÓN EN DOS COLUMNAS ============
+      const col1X = margin;
+      const col2X = pageWidth / 2 + 5;
+      const colWidth = (contentWidth / 2) - 5;
+
+      // COLUMNA 1: Detalles de la Rifa
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(27, 160, 136);
+      pdf.text('RIFA', col1X, yPos);
+      yPos += 5;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(data.raffle.title, col1X, yPos, { maxWidth: colWidth });
+      yPos += 5;
+      
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(80, 80, 80);
+      const descLines = pdf.splitTextToSize(data.raffle.shortDescription, colWidth);
+      pdf.text(descLines, col1X, yPos);
+      
+      // COLUMNA 2: Monto
+      const col2YStart = 66;
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(27, 160, 136);
+      pdf.text('MONTO PAGADO', col2X, col2YStart);
+      
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(27, 160, 136);
+      pdf.text(formatCurrency(data.amount, data.currency), col2X, col2YStart + 10);
+
+      yPos = Math.max(yPos + descLines.length * 4, col2YStart + 15) + 8;
+
+      // ============ DATOS DEL PARTICIPANTE ============
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 6;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(27, 160, 136);
+      pdf.text('PARTICIPANTE', margin, yPos);
+      yPos += 6;
+
+      const participantInfo = [
+        { label: 'Nombre', value: data.buyer.name },
+        { label: 'Cédula', value: data.buyer.id },
+        { label: 'Email', value: data.buyer.email },
+        { label: 'Teléfono', value: data.buyer.phone },
+      ];
+
+      participantInfo.forEach((item) => {
+        pdf.setFontSize(8);
+        pdf.setTextColor(120, 120, 120);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(item.label + ':', margin, yPos);
+        
+        pdf.setFontSize(9);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(item.value, margin + 25, yPos);
+        yPos += 5;
+      });
+
+      yPos += 5;
+
+      // ============ NÚMEROS DE LA SUERTE ============
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 6;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(27, 160, 136);
+      pdf.text('NÚMEROS DE LA SUERTE', margin, yPos);
+      yPos += 6;
+
+      // Dibujar números de forma simple
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(240, 185, 11);
+      
+      const ticketsText = data.tickets.join('  •  ');
+      const ticketLines = pdf.splitTextToSize(ticketsText, contentWidth);
+      pdf.text(ticketLines, margin, yPos);
+      yPos += ticketLines.length * 7 + 3;
+
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Total: ${data.tickets.length} ticket${data.tickets.length > 1 ? 's' : ''}`, margin, yPos);
+      yPos += 10;
+
+      // ============ REFERENCIAS DE TRANSACCIÓN ============
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 6;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(27, 160, 136);
+      pdf.text('REFERENCIAS', margin, yPos);
+      yPos += 6;
+
+      const references = [
+        { label: 'ID Transacción', value: data.transactionId },
+        { label: 'Ref. IBP', value: data.refIbp },
+        { label: 'Reserva', value: data.bookingId },
+      ];
+
+      references.forEach((ref) => {
+        pdf.setFontSize(8);
+        pdf.setTextColor(120, 120, 120);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(ref.label + ':', margin, yPos);
+        
+        pdf.setFontSize(8);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(ref.value, margin + 30, yPos);
+        yPos += 5;
+      });
+
+      yPos += 5;
+
+      // ============ CÓDIGO QR ============
+      // Generar QR con URL (por ahora fija, más adelante con ID firmado)
+      const qrUrl = `https://tusorteoganador.com/verify/${data.transactionId}`;
+      const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+        width: 200,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+
+      // Posicionar QR al final de la página con más espacio
+      const qrSize = 40;
+      const qrX = (pageWidth - qrSize) / 2;
+      const qrY = pageHeight - 70;
+
+      pdf.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+
+      // Texto debajo del QR
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 100, 100);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Escanea para verificar autenticidad', pageWidth / 2, qrY + qrSize + 6, { align: 'center' });
+
+      // ============ FOOTER ============
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+      
+      pdf.setFontSize(7);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text('TuSorteoGanador © 2025', pageWidth / 2, pageHeight - 8, { align: 'center' });
+
+      // Descargar
+      const fileName = `Comprobante_${data.transactionId}_${Date.now()}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const handleClose = async () => {
+    await generatePDF();
+    onClose();
+  };
+
   return (
     <Modal 
       open={open} 
@@ -104,33 +356,34 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       lockBodyScroll
       closeOnBackdropClick={false}
     >
-      {/* Header con ícono de éxito y fecha */}
-      <div className="text-center mb-6">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-          className="w-20 h-20 mx-auto mb-4 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center"
-        >
-          <Check className="w-12 h-12 text-green-600 dark:text-green-400" />
-        </motion.div>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {formatDate()}
-        </p>
-      </div>
-
-      {/* Contenido del ticket */}
+      {/* Contenido del modal */}
       <div className="space-y-6">
+        {/* Header con ícono de éxito y fecha */}
+        <div className="text-center">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+            className="w-20 h-20 mx-auto mb-4 bg-state-success rounded-full flex items-center justify-center shadow-lg"
+          >
+            <Check className="w-12 h-12 text-white" />
+          </motion.div>
+          <p className="text-sm text-text-muted">
+            {formatDate()}
+          </p>
+        </div>
+
+        {/* Contenido del ticket */}
         {/* Información de la rifa */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+          <h3 className="text-lg font-semibold text-text-primary mb-3">
             Detalles de la Rifa
           </h3>
-          <div className="bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-            <h4 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-2">
+          <div className="bg-bg-secondary rounded-xl p-4 border border-border-light">
+            <h4 className="font-bold text-xl text-text-primary mb-2">
               {data.raffle.title}
             </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-text-secondary">
               {data.raffle.shortDescription}
             </p>
           </div>
@@ -138,31 +391,31 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
 
         {/* Datos del comprador */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+          <h3 className="text-lg font-semibold text-text-primary mb-3">
             Datos del Participante
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Nombre</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
+              <p className="text-xs text-text-muted mb-1 font-medium">Nombre</p>
+              <p className="text-sm font-semibold text-text-primary">
                 {data.buyer.name}
               </p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Cédula</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
+              <p className="text-xs text-text-muted mb-1 font-medium">Cédula</p>
+              <p className="text-sm font-semibold text-text-primary">
                 {data.buyer.id}
               </p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Email</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+            <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
+              <p className="text-xs text-text-muted mb-1 font-medium">Email</p>
+              <p className="text-sm font-semibold text-text-primary truncate">
                 {data.buyer.email}
               </p>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Teléfono</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
+              <p className="text-xs text-text-muted mb-1 font-medium">Teléfono</p>
+              <p className="text-sm font-semibold text-text-primary">
                 {data.buyer.phone}
               </p>
             </div>
@@ -171,10 +424,10 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
 
         {/* Tickets comprados */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+          <h3 className="text-lg font-semibold text-text-primary mb-3">
             Tus Números de la Suerte
           </h3>
-          <div className="bg-linear-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl p-4 border-2 border-amber-200 dark:border-amber-800">
+          <div className="bg-bg-tertiary rounded-xl p-4 border-2 border-binance-main">
             <div className="flex flex-wrap gap-2 justify-center">
               {data.tickets.map((ticket, index) => (
                 <motion.div
@@ -182,7 +435,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 + index * 0.05 }}
-                  className="w-16 h-16 bg-linear-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center shadow-lg"
+                  className="w-16 h-16 bg-binance-main rounded-lg flex items-center justify-center shadow-lg border-2 border-binance-dark"
                 >
                   <span className="text-2xl font-bold text-white">
                     {ticket}
@@ -190,11 +443,11 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
                 </motion.div>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t border-amber-200 dark:border-amber-800 flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="mt-4 pt-4 border-t-2 border-border-light flex justify-between items-center">
+              <span className="text-sm font-semibold text-text-secondary">
                 Total de tickets:
               </span>
-              <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
+              <span className="text-lg font-bold text-binance-main">
                 {data.tickets.length}
               </span>
             </div>
@@ -202,12 +455,12 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         </div>
 
         {/* Monto pagado */}
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border-2 border-green-200 dark:border-green-800">
+        <div className="bg-bg-tertiary rounded-xl p-4 border-2 border-mint-main">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-semibold text-text-secondary">
               Monto Total Pagado:
             </span>
-            <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <span className="text-2xl font-bold text-mint-main">
               {formatCurrency(data.amount, data.currency)}
             </span>
           </div>
@@ -215,7 +468,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
 
         {/* Referencias de transacción */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+          <h3 className="text-lg font-semibold text-text-primary mb-3">
             Referencias de Transacción
           </h3>
           <div className="space-y-3">
@@ -235,21 +488,34 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         </div>
 
         {/* Mensaje informativo */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
-            <strong>¡Importante!</strong> Guarda estas referencias para cualquier consulta futura.
-            Hemos enviado una copia de esta información a tu correo electrónico.
+        <div className="bg-bg-tertiary border-2 border-state-info rounded-lg p-4">
+          <p className="text-sm text-text-primary text-center font-medium">
+            <strong className="font-bold text-state-info">¡Importante!</strong> Guarda estas referencias para cualquier consulta futura.
+            Al cerrar esta ventana se descargará automáticamente un comprobante en PDF.
           </p>
         </div>
-
-        {/* Botón de cerrar */}
-        <Button
-          onClick={onClose}
-          className="w-full"
-        >
-          Entendido
-        </Button>
       </div>
+      {/* Fin del contenido del modal */}
+
+      {/* Botones de acción */}
+        <div className="flex gap-3 mt-6">
+          <Button
+            onClick={generatePDF}
+            variant="secondary"
+            className="flex-1"
+            disabled={isGeneratingPDF}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {isGeneratingPDF ? 'Generando...' : 'Descargar PDF'}
+          </Button>
+          <Button
+            onClick={handleClose}
+            className="flex-1"
+            disabled={isGeneratingPDF}
+          >
+            Entendido
+          </Button>
+        </div>
     </Modal>
   );
 }
