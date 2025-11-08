@@ -7,6 +7,7 @@ import TicketSelectionForm from './TicketSelectionForm';
 import UserDataForm from './UserDataForm';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
 import OTPVerification from './payments/OTPVerification';
+import PurchaseSuccessView, { type PurchaseSuccessData } from './PurchaseSuccessView';
 import { useRaffleDetail, useCreateParticipant, useParticipant } from '../../hooks';
 import type { RaffleSummary } from '../../types/raffles';
 import { requestDebitOtp, processDebit, pollTransactionStatus } from '../../services/payments';
@@ -31,11 +32,18 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
 
     const [bookingId, setBookingId] = useState<string | null>(null);
 
+    const [purchaseSuccess, setPurchaseSuccess] = useState<PurchaseSuccessData | null>(null);
+
   
+    // Limpiar estado cuando el modal se ABRE (no cuando se cierra)
+    // Esto permite que purchaseSuccess persista después de cerrar el modal de detalle
     useEffect(() => {
-        setSelected([]);
-        setOtpCountdown(0);
-        setBookingId(null);
+        if (open) {
+            setSelected([]);
+            setOtpCountdown(0);
+            setBookingId(null);
+            // NO limpiar purchaseSuccess aquí - se limpia cuando se cierra la vista de éxito
+        }
     }, [open, raffle?.id]);
 
     // Countdown para OTP
@@ -245,10 +253,32 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
 
         // 3. Manejar el resultado final
         if (result.finalStatus === 'ACCP') {
-            // Pago aceptado - cerrar modal y mostrar éxito
-            onClose();
-            // TODO: Mostrar notificación de éxito con ref_ibp
+            // Pago aceptado - preparar datos para la vista de éxito
+            const successData: PurchaseSuccessData = {
+                transactionId: result.transaction_id,
+                refIbp: result.ref_ibp,
+                bookingId: result.booking_id,
+                raffle: raffle,
+                buyer: {
+                    name: checkout.buyer.name,
+                    email: checkout.buyer.email,
+                    phone: checkout.buyer.phone,
+                    id: checkout.buyer.id,
+                },
+                tickets: selected,
+                amount: amount,
+                currency: detail.currency || 'USD',
+            };
+
             console.log('Pago exitoso. Referencia:', result.ref_ibp);
+
+            // Primero mostrar la vista de éxito
+            setPurchaseSuccess(successData);
+            
+            // Luego cerrar el modal con un pequeño delay para que React renderice la vista de éxito
+            setTimeout(() => {
+                onClose();
+            }, 100);
         } else if (result.finalStatus === 'RJCT') {
             // Pago rechazado - mostrar razón
             throw new Error(result.rsn || 'El pago fue rechazado. Por favor, verifique sus datos e intente nuevamente.');
@@ -338,6 +368,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
     ];
 
     return (
+        <>
         <Modal open={open} onClose={onClose} size="xl" title={detail?.title || 'Detalle de rifa'} lockBodyScroll closeOnBackdropClick={false}>
             <Stepper<CheckoutData>
                 steps={steps}
@@ -372,6 +403,14 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 }}
             />
         </Modal>
+
+        {/* Vista de compra exitosa */}
+        <PurchaseSuccessView
+            data={purchaseSuccess}
+            open={!!purchaseSuccess}
+            onClose={() => setPurchaseSuccess(null)}
+        />
+    </>
     );
 }
 
