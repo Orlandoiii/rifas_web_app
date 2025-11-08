@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Check, Copy, Download, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, Copy, Download, Sparkles, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import Modal from '../lib/components/modal/core/Modal';
@@ -119,6 +120,49 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [isLoadingPrize, setIsLoadingPrize] = useState(false);
+
+  const hasBlessNumbers = data.blessNumbers && data.blessNumbers.length > 0;
+
+  // Efecto de confetti cuando hay números bendecidos
+  useEffect(() => {
+    if (open && hasBlessNumbers) {
+      const duration = 3000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+      function randomInRange(min: number, max: number) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+
+        // Confeti dorado desde la izquierda
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          colors: ['#F0B90B', '#FFD700', '#FFA500', '#FF8C00']
+        });
+
+        // Confeti dorado desde la derecha
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          colors: ['#F0B90B', '#FFD700', '#FFA500', '#FF8C00']
+        });
+      }, 250);
+
+      return () => clearInterval(interval);
+    }
+  }, [open, hasBlessNumbers]);
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('es-VE', {
@@ -439,7 +483,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       open={open} 
       onClose={onClose} 
       size="xl" 
-      title="¡Compra Exitosa!"
+      title={hasBlessNumbers ? "¡Compra Exitosa! ¡Felicidades! Usted ya es un ganador." : "¡Compra Exitosa!"}
       lockBodyScroll
       closeOnBackdropClick={false}
     >
@@ -451,12 +495,16 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-            className="w-20 h-20 mx-auto mb-4 bg-state-success rounded-full flex items-center justify-center shadow-lg"
+            className={`w-20 h-20 mx-auto mb-4 ${hasBlessNumbers ? 'bg-linear-to-br from-binance-light via-binance-main to-binance-dark' : 'bg-state-success'} rounded-full flex items-center justify-center shadow-lg`}
           >
-            <Check className="w-12 h-12 text-white" />
+            {hasBlessNumbers ? (
+              <Trophy className="w-12 h-12 text-white" strokeWidth={1.5} />
+            ) : (
+              <Check className="w-12 h-12 text-white" />
+            )}
           </motion.div>
           <p className="text-sm text-text-muted">
-            {formatDate()}
+            {hasBlessNumbers ? `¡Felicidades! ${formatDate()}` : formatDate()}
           </p>
         </div>
 
@@ -475,6 +523,43 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
             </p>
           </div>
         </div>
+
+        {/* Bless Numbers ganadores - Reubicado antes de datos del participante */}
+        {hasBlessNumbers && (
+          <div>
+            <h3 className="text-lg font-semibold text-text-primary mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-mint-main" />
+                <span>¡Números Benditos Ganadores!</span>
+              </div>
+            </h3>
+            <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
+              <p className="text-xs sm:text-sm text-text-secondary mb-3 text-center flex items-center justify-center gap-2">
+                <Trophy className="w-4 h-4 text-mint-main" />
+                Haz click en un número para ver los detalles del premio
+              </p>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
+                {data.blessNumbers.map((blessNumber, index) => (
+                  <motion.button
+                    key={blessNumber}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + index * 0.05 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleBlessNumberClick(blessNumber)}
+                    disabled={isLoadingPrize}
+                    className="w-12 h-12 sm:w-16 sm:h-16 bg-mint-main/20 border-2 border-mint-main rounded-lg flex items-center justify-center shadow-lg hover:bg-mint-main/30 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="text-lg sm:text-2xl font-bold text-mint-main">
+                      {blessNumber}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Datos del comprador */}
         <div>
@@ -540,42 +625,6 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
             </div>
           </div>
         </div>
-
-        {/* Bless Numbers ganadores */}
-        {data.blessNumbers && data.blessNumbers.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-text-primary mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-mint-main" />
-                <span>¡Números Benditos Ganadores!</span>
-              </div>
-            </h3>
-            <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
-              <p className="text-xs sm:text-sm text-text-secondary mb-3 text-center">
-                Haz click en un número para ver los detalles del premio
-              </p>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
-                {data.blessNumbers.map((blessNumber, index) => (
-                  <motion.button
-                    key={blessNumber}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.1 + index * 0.05 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleBlessNumberClick(blessNumber)}
-                    disabled={isLoadingPrize}
-                    className="w-12 h-12 sm:w-16 sm:h-16 bg-mint-main/20 border-2 border-mint-main rounded-lg flex items-center justify-center shadow-lg hover:bg-mint-main/30 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="text-lg sm:text-2xl font-bold text-mint-main">
-                      {blessNumber}
-                    </span>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Monto pagado */}
         <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">

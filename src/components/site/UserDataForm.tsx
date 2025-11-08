@@ -99,6 +99,7 @@ export default function UserDataForm({
             value={buyer.id}
             onChange={handleField('id')}
             disabled={disabled}
+            type="number"
           />
         </div>
         <div>
@@ -108,6 +109,7 @@ export default function UserDataForm({
             value={buyer.name}
             onChange={handleField('name')}
             disabled={disabled}
+            type="text"
           />
         </div>
         <div>
@@ -117,6 +119,7 @@ export default function UserDataForm({
             value={buyer.phone}
             onChange={handleField('phone')}
             disabled={disabled}
+            type="number"
           />
         </div>
         <div>
