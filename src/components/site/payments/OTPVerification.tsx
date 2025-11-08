@@ -6,10 +6,10 @@ interface OTPVerificationProps {
   selectedNumbers: number[];
   price: number;
   currency: string;
-  onVerify: (otp: string) => void;
+  onVerify: (otp: string, onStatusUpdate?: (status: string) => void) => Promise<void>;
   disabled?: boolean;
   countdown?: number;
-  onResend?: () => void;
+  onResend?: () => Promise<void>;
 }
 
 export default function OTPVerification({
@@ -23,6 +23,10 @@ export default function OTPVerification({
   onResend
 }: OTPVerificationProps) {
   const [otp, setOtp] = React.useState<string[]>(Array(8).fill(''));
+  const [isVerifying, setIsVerifying] = React.useState(false);
+  const [isResending, setIsResending] = React.useState(false);
+  const [error, setError] = React.useState<string>('');
+  const [processingStatus, setProcessingStatus] = React.useState<string | null>(null);
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
@@ -35,6 +39,9 @@ export default function OTPVerification({
   const handleChange = (index: number, value: string) => {
     // Solo permitir números
     if (value && !/^\d$/.test(value)) return;
+
+    // Limpiar error cuando el usuario empiece a escribir
+    if (error) setError('');
 
     const newOtp = [...otp];
     newOtp[index] = value;
@@ -71,15 +78,43 @@ export default function OTPVerification({
     inputRefs.current[focusIndex]?.focus();
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const otpValue = otp.join('');
     if (otpValue.length === 8) {
-      onVerify(otpValue);
+      setIsVerifying(true);
+      setError('');
+      setProcessingStatus('PROCESSING');
+      try {
+        await onVerify(otpValue, (status) => {
+          setProcessingStatus(status);
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error al verificar el código OTP';
+        setError(message);
+        setProcessingStatus(null);
+      } finally {
+        setIsVerifying(false);
+      }
+    }
+  };
+
+  const handleResend = async () => {
+    if (!onResend) return;
+    setIsResending(true);
+    setError('');
+    try {
+      await onResend();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al reenviar el código OTP';
+      setError(message);
+    } finally {
+      setIsResending(false);
     }
   };
 
   const isComplete = otp.every(digit => digit !== '');
   const canResend = countdown === 0 && onResend;
+  const isDisabled = disabled || isVerifying || isResending;
 
   return (
     <div className="space-y-6">
@@ -119,6 +154,28 @@ export default function OTPVerification({
             enviada a su cuenta de correo electrónico o buzón de mensaje.
           </p>
         </div>
+
+        {/* Mensaje de error */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">
+            {error}
+          </div>
+        )}
+
+        {/* Mensaje de estado de procesamiento */}
+        {processingStatus && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400"></div>
+              <span className="text-sm text-blue-700 dark:text-blue-300">
+                {processingStatus === 'PROC' && 'Procesando su pago...'}
+                {processingStatus === 'PEND' && 'Pago pendiente de confirmación...'}
+                {processingStatus === 'AC00' && 'Procesando con el banco...'}
+                {!['PROC', 'PEND', 'AC00'].includes(processingStatus) && 'Procesando su pago, por favor espere...'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Inputs OTP */}
@@ -136,7 +193,7 @@ export default function OTPVerification({
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}
-              disabled={disabled}
+              disabled={isDisabled}
               className="w-12 h-12 sm:w-12 sm:h-14 text-center text-lg font-semibold bg-bg-secondary border border-border-light rounded-lg focus:border-selected focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-text-primary"
             />
           ))}
@@ -155,7 +212,7 @@ export default function OTPVerification({
               onChange={(e) => handleChange(index + 4, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index + 4, e)}
               onPaste={handlePaste}
-              disabled={disabled}
+              disabled={isDisabled}
               className="w-12 h-12 sm:w-12 sm:h-14 text-center text-lg font-semibold bg-bg-secondary border border-border-light rounded-lg focus:border-selected focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-text-primary"
             />
           ))}
@@ -166,10 +223,10 @@ export default function OTPVerification({
       <div className="flex justify-center">
         <Button
           onClick={handleConfirm}
-          disabled={!isComplete || disabled}
+          disabled={!isComplete || isDisabled}
           className="w-full sm:w-auto px-12"
         >
-          Confirmar
+          {isVerifying ? 'Verificando...' : 'Confirmar'}
         </Button>
       </div>
 
@@ -182,11 +239,11 @@ export default function OTPVerification({
         ) : (
           canResend && (
             <button
-              onClick={onResend}
-              disabled={disabled}
+              onClick={handleResend}
+              disabled={isDisabled}
               className="text-sm text-selected hover:text-selected-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Reenviar código
+              {isResending ? 'Reenviando...' : 'Reenviar código'}
             </button>
           )
         )}

@@ -76,7 +76,7 @@ export function useCreateParticipant() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (participant: Omit<RaffleParticipant, 'participantId'>) =>
+    mutationFn: (participant: RaffleParticipant) =>
       rafflesService.createParticipant(participant),
     onSuccess: (_data, variables) => {
       // Invalidar la cache de tickets vendidos para esta rifa

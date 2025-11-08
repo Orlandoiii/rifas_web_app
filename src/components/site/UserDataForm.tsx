@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Input } from '../lib/components/input';
+import { Button } from '../lib/components/button';
 
 type Buyer = {
   id: string;
@@ -16,15 +17,32 @@ interface UserDataFormProps {
   buyer: Buyer;
   onChange: (buyer: Buyer) => void;
   disabled?: boolean;
+  onClearData?: () => void;
+  hasStoredData?: boolean;
 }
 
-export default function UserDataForm({ raffleTitle, price, currency,
-  selectedNumbers, buyer, onChange, disabled = false }: UserDataFormProps) {
+export default function UserDataForm({ 
+  raffleTitle, 
+  price, 
+  currency,
+  selectedNumbers, 
+  buyer, 
+  onChange, 
+  disabled = false,
+  onClearData,
+  hasStoredData = false 
+}: UserDataFormProps) {
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
 
   const handleField = (key: keyof Buyer) => (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...buyer, [key]: e.target.value });
+  };
+
+  const handleClearData = () => {
+    if (onClearData) {
+      onClearData();
+    }
   };
 
   return (
@@ -50,6 +68,28 @@ export default function UserDataForm({ raffleTitle, price, currency,
           </div>
         ) : null}
       </div>
+
+      {/* Botón limpiar datos guardados */}
+      {hasStoredData && onClearData && (
+        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm text-blue-700 dark:text-blue-300">
+              Datos guardados de compras anteriores
+            </span>
+          </div>
+          <Button 
+            variant="secondary" 
+            onClick={handleClearData}
+            disabled={disabled}
+            className="text-sm"
+          >
+            Limpiar datos
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

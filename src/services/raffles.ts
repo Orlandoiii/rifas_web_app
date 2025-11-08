@@ -19,7 +19,7 @@ export const rafflesService: IRafflesService = {
   },
 
   async createParticipant(
-    participant: Omit<RaffleParticipant, 'participantId'>,
+    participant: RaffleParticipant,
     signal?: AbortSignal
   ): Promise<RaffleParticipantResponse> {
     const response = await fetch(API_ENDPOINTS.raffles.createParticipant(), {

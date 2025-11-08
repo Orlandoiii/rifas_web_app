@@ -7,8 +7,9 @@ import TicketSelectionForm from './TicketSelectionForm';
 import UserDataForm from './UserDataForm';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
 import OTPVerification from './payments/OTPVerification';
-import { useRaffleDetail, useCreateParticipant } from '../../hooks';
+import { useRaffleDetail, useCreateParticipant, useParticipant } from '../../hooks';
 import type { RaffleSummary } from '../../types/raffles';
+import { requestDebitOtp, processDebit, pollTransactionStatus } from '../../services/payments';
 
 interface RaffleDetailModalProps {
     raffle: RaffleSummary | null;
@@ -17,15 +18,24 @@ interface RaffleDetailModalProps {
 }
 
 export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetailModalProps) {
-    const { data: detail, isLoading: loadingTickets, isError: errorTickets } = useRaffleDetail(open ? raffle : null);
+    const { data: detail, isLoading: loadingTickets,
+        isError: errorTickets } = useRaffleDetail(open ? raffle : null);
+
     const createParticipant = useCreateParticipant();
+
+    const { participant, saveParticipant, updateParticipant, clearParticipant } = useParticipant();
+
     const [selected, setSelected] = useState<number[]>([]);
+
     const [otpCountdown, setOtpCountdown] = useState(0);
 
+    const [bookingId, setBookingId] = useState<string | null>(null);
+
+  
     useEffect(() => {
-        if (!open) return;
         setSelected([]);
         setOtpCountdown(0);
+        setBookingId(null);
     }, [open, raffle?.id]);
 
     // Countdown para OTP
@@ -50,34 +60,113 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         },
     });
 
+    // Cargar datos del participante guardado cuando se abre el modal
+    useEffect(() => {
+        if (open && participant) {
+            setCheckout(prev => ({
+                ...prev,
+                buyer: {
+                    id: participant.id,
+                    name: participant.name,
+                    phone: participant.phone,
+                    email: participant.email,
+                }
+            }));
+        }
+    }, [open, participant]);
+
     // Función para reservar tickets cuando el usuario avanza del paso 2 al 3
     const handleReserveTickets = async (): Promise<void> => {
         if (!raffle?.id || selected.length === 0) {
             throw new Error('No hay tickets seleccionados para reservar');
         }
 
-        const response = await createParticipant.mutateAsync({
+        const requestData = {
             raffleId: raffle.id,
             name: checkout.buyer.name,
             email: checkout.buyer.email,
             phone: checkout.buyer.phone,
             ticketNumber: selected,
-        });
+            ...(participant?.participantId && { participantId: participant.participantId }),
+        };
+
+        const response = await createParticipant.mutateAsync(requestData);
 
         // Verificar que se reservaron los tickets correctamente
         if (!response.reserveTickets || response.reserveTickets.length === 0) {
             throw new Error('No se pudieron reservar los tickets seleccionados');
         }
+
+        // Verificar que se reservaron TODOS los tickets solicitados
+        if (response.reserveTickets.length !== selected.length) {
+            throw new Error(
+                `Solo se pudieron reservar ${response.reserveTickets.length} de ${selected.length} tickets. Por favor, intente nuevamente.`
+            );
+        }
+
+        // Verificar que se recibió el bookingId
+        if (!response.bookingId) {
+            throw new Error('No se recibió el ID de reserva del servidor');
+        }
+
+        // Guardar el bookingId para los siguientes pasos
+        setBookingId(response.bookingId);
+
+        // Guardar o actualizar datos del participante
+        if (!participant) {
+            // Primera vez: guardar los datos del usuario con ID temporal
+            const participantData = {
+                participantId: `participant-${Date.now()}`, // Generar ID temporal
+                id: checkout.buyer.id,
+                name: checkout.buyer.name,
+                phone: checkout.buyer.phone,
+                email: checkout.buyer.email,
+            };
+            saveParticipant(participantData);
+        } else {
+            // Verificar si los datos cambiaron y actualizarlos
+            const hasChanges =
+                participant.id !== checkout.buyer.id ||
+                participant.name !== checkout.buyer.name ||
+                participant.phone !== checkout.buyer.phone ||
+                participant.email !== checkout.buyer.email;
+
+            if (hasChanges) {
+                updateParticipant({
+                    id: checkout.buyer.id,
+                    name: checkout.buyer.name,
+                    phone: checkout.buyer.phone,
+                    email: checkout.buyer.email,
+                });
+            }
+        }
     };
 
     // Función para generar OTP cuando el usuario avanza del paso 3 al 4
     const handleGenerateOTP = async (): Promise<void> => {
-        // TODO: Implementar llamada al backend para generar OTP
-        // const response = await generateOTP({ ...checkout.payment });
-        
-        // Simular generación de OTP
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        if (!raffle || !detail) {
+            throw new Error('No hay información de la rifa disponible');
+        }
+
+        // Verificar que existe el bookingId
+        if (!bookingId) {
+            throw new Error('No hay una reserva activa. Por favor, intente nuevamente desde el inicio.');
+        }
+
+        // Calcular monto total
+        const amount = (detail.price || 0) * selected.length;
+
+        // Llamar al servicio para solicitar OTP
+        await requestDebitOtp({
+            booking_id: bookingId,
+            document_letter: checkout.payment.docType,
+            document: checkout.payment.docNumber,
+            bank_code: checkout.payment.bankCode,
+            account_number: checkout.payment.phone,
+            amount: amount,
+            currency: detail.currency || 'USD',
+        });
+
         // Iniciar countdown de 26 segundos
         setOtpCountdown(26);
     };
@@ -87,17 +176,86 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         await handleGenerateOTP();
     };
 
-    // Función para verificar OTP
-    const handleVerifyOTP = async (otp: string): Promise<void> => {
-        // TODO: Implementar llamada al backend para verificar OTP y procesar pago
-        console.log('Verificando OTP:', otp);
-        console.log('Datos de pago:', checkout.payment);
-        
-        // Simular verificación
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Si todo está bien, cerrar modal
-        // onClose();
+    // Función para limpiar datos guardados
+    const handleClearUserData = () => {
+        clearParticipant();
+        setCheckout(prev => ({
+            ...prev,
+            buyer: { id: '', name: '', phone: '', email: '' }
+        }));
+    };
+
+    // Función para verificar OTP y procesar el débito
+    const handleVerifyOTP = async (
+        otp: string,
+        onStatusUpdate?: (status: string) => void
+    ): Promise<void> => {
+        // Validar que tenemos todos los datos necesarios
+        if (!raffle) {
+            throw new Error('No hay información de la rifa');
+        }
+        if (!detail) {
+            throw new Error('No hay información del detalle de la rifa');
+        }
+        if (!bookingId) {
+            throw new Error('No hay una reserva activa. Por favor, intente nuevamente desde el inicio.');
+        }
+        if (!participant) {
+            throw new Error('No hay información del participante');
+        }
+
+        // Calcular monto total
+        const amount = (detail.price || 0) * selected.length;
+
+        // 1. Procesar el débito con el bookingId de la reserva
+        // El bookingId se obtuvo al reservar los tickets y se mantiene durante todo el flujo
+        const debitResponse = await processDebit({
+            booking_id: bookingId,  // bookingId de la reserva (guardado en estado)
+            participant_id: participant.participantId,
+            raffle_id: raffle.id,
+            tickets: selected,
+            receiver_name: checkout.buyer.name,
+            receiver_otp: otp,
+            receiver_document_type: checkout.payment.docType,
+            receiver_document_number: checkout.payment.docNumber,
+            receiver_bank_code: checkout.payment.bankCode,
+            receiver_account_number: checkout.payment.phone,
+            amount: amount,
+            currency: detail.currency || 'USD',
+        });
+
+        // Validar que recibimos el transaction_id de SyPago
+        // Este ID identifica el intento de débito en SyPago
+        if (!debitResponse.transaction_id) {
+            console.log('No se recibió el ID de transacción del servidor');
+            throw new Error('No se recibió el ID de transacción del servidor');
+        }
+
+        console.log('Transaction ID recibido de SyPago:', debitResponse.transaction_id);
+        console.log('Booking ID usado:', bookingId);
+
+        // 2. Iniciar polling del estado de la transacción
+        // Importante: Usar el mismo bookingId de la reserva, no el de la respuesta
+        // El bookingId se mantiene constante desde la reserva hasta el cierre del modal
+        const result = await pollTransactionStatus(
+            debitResponse.transaction_id,
+            bookingId,  // Mismo bookingId de la reserva
+            onStatusUpdate
+        );
+
+        // 3. Manejar el resultado final
+        if (result.finalStatus === 'ACCP') {
+            // Pago aceptado - cerrar modal y mostrar éxito
+            onClose();
+            // TODO: Mostrar notificación de éxito con ref_ibp
+            console.log('Pago exitoso. Referencia:', result.ref_ibp);
+        } else if (result.finalStatus === 'RJCT') {
+            // Pago rechazado - mostrar razón
+            throw new Error(result.rsn || 'El pago fue rechazado. Por favor, verifique sus datos e intente nuevamente.');
+        } else if (result.finalStatus === 'TIMEOUT') {
+            // Timeout - mostrar mensaje especial
+            throw new Error(result.rsn || 'El tiempo de espera ha expirado. Por favor, contacte con soporte.');
+        }
     };
 
     const steps: Step<CheckoutData>[] = [
@@ -132,6 +290,8 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     buyer={data.buyer}
                     onChange={(buyer) => setData(prev => ({ ...prev, buyer }))}
                     disabled={isProcessing}
+                    onClearData={handleClearUserData}
+                    hasStoredData={!!participant}
                 />
             )
         },
@@ -197,7 +357,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                             </div>
                         );
                     }
-                    
+
                     return (
                         <div className="mt-6 flex items-center justify-between">
                             <Button variant="secondary" onClick={goBack} disabled={current === 0 || isProcessing}>
