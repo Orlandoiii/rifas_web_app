@@ -68,6 +68,8 @@ export interface IRafflesService {
   getSoldTickets(raffleId: RaffleId, signal?: AbortSignal): Promise<number[]>;
   createParticipant(participant: RaffleParticipant, signal?: AbortSignal): Promise<RaffleParticipantResponse>;
   verifyRaffle(request: RaffleVerifyRequest, signal?: AbortSignal): Promise<RaffleVerifyResult>;
+  getMainWinnerTickets(raffleId: RaffleId, signal?: AbortSignal): Promise<number[]>;
+  getBlessNumberWinnerTickets(raffleId: RaffleId, signal?: AbortSignal): Promise<number[]>;
 }
 
 

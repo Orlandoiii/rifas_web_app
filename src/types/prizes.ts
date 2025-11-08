@@ -18,5 +18,6 @@ export interface IPrizesService {
     ticketId: number, 
     signal?: AbortSignal
   ): Promise<Prize | null>;
+  
 }
 
