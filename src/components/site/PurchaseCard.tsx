@@ -1,13 +1,15 @@
 import { motion } from 'framer-motion';
-import { Calendar, Hash, Ticket, ChevronRight } from 'lucide-react';
+import { Calendar, Hash, Ticket, ChevronRight, Search } from 'lucide-react';
+import { Button } from '../lib/components/button';
 import type { PurchaseSuccessData } from './PurchaseSuccessView';
 
 interface PurchaseCardProps {
   purchase: PurchaseSuccessData;
-  onClick: () => void;
+  onViewDetails: () => void;
+  onVerify: () => void;
 }
 
-export default function PurchaseCard({ purchase, onClick }: PurchaseCardProps) {
+export default function PurchaseCard({ purchase, onViewDetails, onVerify }: PurchaseCardProps) {
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('es-VE', {
       style: 'currency',
@@ -30,10 +32,7 @@ export default function PurchaseCard({ purchase, onClick }: PurchaseCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className="bg-bg-secondary border border-border-light rounded-xl p-4 sm:p-5 cursor-pointer hover:border-mint-main transition-all duration-300 hover:shadow-lg"
+      className="bg-bg-secondary border border-border-light rounded-xl p-4 sm:p-5 hover:border-mint-main transition-all duration-300 hover:shadow-lg"
     >
       {/* Header con imagen y título */}
       <div className="flex gap-3 sm:gap-4 mb-4">
@@ -52,7 +51,13 @@ export default function PurchaseCard({ purchase, onClick }: PurchaseCardProps) {
             {purchase.raffle.shortDescription}
           </p>
         </div>
-        <ChevronRight className="shrink-0 w-5 h-5 text-text-muted self-center" />
+        <button
+          onClick={onViewDetails}
+          className="shrink-0 p-1 hover:bg-bg-tertiary rounded transition-colors cursor-pointer"
+          aria-label="Ver detalles de la compra"
+        >
+          <ChevronRight className="w-5 h-5 text-text-muted" />
+        </button>
       </div>
 
       {/* Información de la compra */}
@@ -98,7 +103,7 @@ export default function PurchaseCard({ purchase, onClick }: PurchaseCardProps) {
       </div>
 
       {/* Footer con monto y referencia */}
-      <div className="flex items-center justify-between pt-4 border-t border-border-light">
+      <div className="flex items-center justify-between pt-4 border-t border-border-light mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <Hash className="w-4 h-4 text-text-muted shrink-0" />
           <span className="text-xs font-mono text-text-muted truncate">
@@ -111,6 +116,16 @@ export default function PurchaseCard({ purchase, onClick }: PurchaseCardProps) {
           </span>
         </div>
       </div>
+
+      {/* Botón de verificación */}
+      <Button
+        onClick={onVerify}
+        variant="secondary"
+        className="w-full"
+      >
+        <Search className="w-4 h-4 mr-2" />
+        Verificar
+      </Button>
     </motion.div>
   );
 }

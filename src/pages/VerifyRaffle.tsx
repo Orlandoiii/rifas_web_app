@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Loader } from '../components/lib/components/loader';
 import NavBar from '../components/site/NavBar';
 import Footer from '../components/site/Footer';
@@ -11,8 +11,12 @@ import type { RaffleSummary } from '../types/raffles';
 export default function VerifyRaffle() {
   const { raffleId } = useParams<{ raffleId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: raffles, isLoading } = useRaffles();
   const [raffle, setRaffle] = useState<RaffleSummary | null>(null);
+  
+  // Obtener documentId del state de navegación
+  const documentId = (location.state as { documentId?: string })?.documentId;
 
   useEffect(() => {
     if (raffles && raffleId) {
@@ -68,7 +72,7 @@ export default function VerifyRaffle() {
           <VerifyRaffleDetails raffle={raffle} />
           
           {/* Sección de formulario de verificación */}
-          <VerifyRaffleForm raffle={raffle} />
+          <VerifyRaffleForm raffle={raffle} initialDocumentId={documentId} />
         </div>
       </main>
       <Footer />

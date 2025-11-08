@@ -5,12 +5,15 @@ import NavBar from '../components/site/NavBar';
 import Footer from '../components/site/Footer';
 import PurchaseCard from '../components/site/PurchaseCard';
 import PurchaseSuccessView, { type PurchaseSuccessData } from '../components/site/PurchaseSuccessView';
+import VerifyRaffleForm from '../components/site/VerifyRaffleForm';
+import Modal from '../components/lib/components/modal/core/Modal';
 import { usePurchases } from '../hooks';
 import { Loader } from '../components/lib/components/loader';
 
 export default function MyPurchases() {
   const { purchases, isLoading } = usePurchases();
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseSuccessData | null>(null);
+  const [verifyingPurchase, setVerifyingPurchase] = useState<PurchaseSuccessData | null>(null);
 
   if (isLoading) {
     return (
@@ -97,7 +100,8 @@ export default function MyPurchases() {
               <PurchaseCard
                 key={purchase.transactionId}
                 purchase={purchase}
-                onClick={() => setSelectedPurchase(purchase)}
+                onViewDetails={() => setSelectedPurchase(purchase)}
+                onVerify={() => setVerifyingPurchase(purchase)}
               />
             ))}
           </div>
@@ -112,6 +116,28 @@ export default function MyPurchases() {
         open={!!selectedPurchase}
         onClose={() => setSelectedPurchase(null)}
       />
+
+      {/* Modal de verificación */}
+      {verifyingPurchase && (
+        <Modal
+          open={!!verifyingPurchase}
+          onClose={() => {
+            setVerifyingPurchase(null);
+          }}
+          size="xl"
+          title={`Verificar: ${verifyingPurchase.raffle.title}`}
+          lockBodyScroll
+          closeOnBackdropClick={false}
+        >
+          <div className="max-h-[80vh] overflow-y-auto overflow-x-hidden w-full">
+            <VerifyRaffleForm
+              raffle={verifyingPurchase.raffle}
+              initialDocumentId={verifyingPurchase.buyer.id}
+              onClose={() => setVerifyingPurchase(null)}
+            />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

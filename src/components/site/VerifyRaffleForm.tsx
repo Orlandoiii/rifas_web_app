@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Loader2, AlertCircle, X } from 'lucide-react';
 import { Button } from '../lib/components/button';
@@ -12,14 +12,25 @@ import type { Prize } from '../../types/prizes';
 
 interface VerifyRaffleFormProps {
   raffle: RaffleSummary;
+  initialDocumentId?: string;
+  onClose?: () => void;
 }
 
-export default function VerifyRaffleForm({ raffle }: VerifyRaffleFormProps) {
-  const [documentId, setDocumentId] = useState('');
+export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }: VerifyRaffleFormProps) {
+  const [documentId, setDocumentId] = useState(initialDocumentId || '');
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [viewedPrizes, setViewedPrizes] = useState<Set<number>>(new Set());
   
   const { verify, getPrizeForTicket, reset, isVerifying, error, result } = useVerifyRaffle();
+  const hasAutoVerified = useRef(false);
+
+  // Ejecutar verificación automáticamente si viene initialDocumentId
+  useEffect(() => {
+    if (initialDocumentId && initialDocumentId.trim() && raffle && !hasAutoVerified.current) {
+      hasAutoVerified.current = true;
+      verify(raffle, initialDocumentId);
+    }
+  }, [initialDocumentId, raffle, verify]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,8 +66,9 @@ export default function VerifyRaffleForm({ raffle }: VerifyRaffleFormProps) {
 
   const handleCloseResultModal = () => {
     reset();
-    setDocumentId('');
+    setDocumentId(initialDocumentId || '');
     setViewedPrizes(new Set());
+    hasAutoVerified.current = false; // Permitir nueva verificación automática si hay initialDocumentId
   };
 
   // Mostrar resultados si hay tickets con premios
@@ -64,14 +76,14 @@ export default function VerifyRaffleForm({ raffle }: VerifyRaffleFormProps) {
 
   return (
     <>
-      <div className="bg-bg-secondary rounded-2xl p-6 sm:p-8 border border-border-light shadow-lg">
+      <div className="bg-bg-secondary rounded-2xl p-4 sm:p-6 md:p-8 border border-border-light shadow-lg w-full max-w-full overflow-x-hidden">
         {!showResults && (
           <>
             <div className="mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary mb-2 wrap-break-word">
                 Verifica tus boletos
               </h2>
-              <p className="text-text-secondary">
+              <p className="text-sm sm:text-base text-text-secondary wrap-break-word">
                 Ingresa tu número de cédula para verificar si tienes números ganadores en esta rifa
               </p>
             </div>
@@ -87,18 +99,18 @@ export default function VerifyRaffleForm({ raffle }: VerifyRaffleFormProps) {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="bg-state-error/10 border border-state-error rounded-lg p-3 flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-state-error shrink-0 mt-0.5" />
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-state-error">{error}</p>
+                        <p className="text-sm font-medium text-red-700 dark:text-red-300">{error}</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => reset()}
-                        className="shrink-0 p-1 hover:bg-state-error/20 rounded transition-colors"
+                        className="shrink-0 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
                         aria-label="Cerrar error"
                       >
-                        <X className="w-4 h-4 text-state-error" />
+                        <X className="w-4 h-4 text-red-600 dark:text-red-400" />
                       </button>
                     </div>
                   </motion.div>
@@ -152,17 +164,29 @@ export default function VerifyRaffleForm({ raffle }: VerifyRaffleFormProps) {
 
         {/* Mostrar resultados con premios */}
         {showResults && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl sm:text-3xl font-bold text-text-primary">
+          <div className="space-y-4 w-full max-w-full overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary wrap-break-word flex-1">
                 Resultado de Verificación
               </h2>
-              <Button
-                variant="secondary"
-                onClick={handleCloseResultModal}
-              >
-                Nueva verificación
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                {onClose && (
+                  <Button
+                    variant="secondary"
+                    onClick={onClose}
+                    className="w-full sm:w-auto"
+                  >
+                    Cerrar
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  onClick={handleCloseResultModal}
+                  className="w-full sm:w-auto"
+                >
+                  Nueva verificación
+                </Button>
+              </div>
             </div>
             <VerifyResultWithPrizes
               allTickets={result.tickets}
