@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+server/bin/web/*
+server/bin/config/config.json
+server/bin/*
+**/bin/*
+/server/bin

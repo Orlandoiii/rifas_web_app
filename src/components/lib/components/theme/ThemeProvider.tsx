@@ -39,9 +39,8 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
 
-  const [theme, setTheme] = React.useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  // Forzar siempre tema oscuro
+  const [theme,_] = React.useState<Theme>(() => "dark")
 
   const [selectedColor, setSelectedColor] = React.useState<SelectedColor>(
     () => (localStorage.getItem(selectedColorKey) as SelectedColor) || defaultSelectedColor
@@ -64,20 +63,10 @@ export function ThemeProvider({
       }, 300)
     } catch { }
 
+    // Forzar siempre tema oscuro
     root.classList.remove("light", "dark")
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      root.setAttribute("data-theme", systemTheme)
-    } else {
-      root.classList.add(theme)
-      root.setAttribute("data-theme", theme)
-    }
+    root.classList.add("dark")
+    root.setAttribute("data-theme", "dark")
   }, [theme])
 
   useEffect(() => {
@@ -93,11 +82,10 @@ export function ThemeProvider({
   }, [selectedColor])
 
   const value = {
-    theme,
+    theme: "dark" as Theme,
     selectedColor,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: () => {
+      // No permitir cambio de tema, siempre oscuro
     },
     setSelectedColor: (color: SelectedColor) => {
       localStorage.setItem(selectedColorKey, color)

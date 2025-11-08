@@ -539,7 +539,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
                 Haz click en un número para ver los detalles del premio
               </p>
               <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
-                {data.blessNumbers.map((blessNumber, index) => (
+                {data?.blessNumbers?.map((blessNumber: number, index: number) => (
                   <motion.button
                     key={blessNumber}
                     initial={{ opacity: 0, scale: 0 }}

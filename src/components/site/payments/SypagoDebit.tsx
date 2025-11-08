@@ -35,7 +35,7 @@ function validatePhone(phone: string): string | null {
   }
   // Validar formato con regex
   if (!PHONE_REGEX.test(phone)) {
-    return 'El teléfono debe ser de Movistar (0414, 0424), Movilnet (0412, 0416), Digitel (0416, 0426) o Cantv (0422)';
+    return 'El teléfono debe ser de Movistar (0414, 0424), Movilnet (0416, 0426), Digitel (0412, 0422)';
   }
   return null;
 }
