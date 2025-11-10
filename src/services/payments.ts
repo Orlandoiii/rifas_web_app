@@ -1,14 +1,22 @@
 import type { Bank } from '../types/payments';
 import { API_ENDPOINTS } from '../config/api';
+import { logger } from './logger';
 
 export async function getBanks(signal?: AbortSignal): Promise<Bank[]> {
-  const response = await fetch(API_ENDPOINTS.payments.banks(), { signal });
+  const url = API_ENDPOINTS.payments.banks();
+  logger.request('GET', url, undefined, { service: 'Payments' });
+  
+  const response = await fetch(url, { signal });
+  const data = await response.json();
+  
+  logger.response('GET', url, response.status, data, { service: 'Payments' });
   
   if (!response.ok) {
+    logger.error(`Error ${response.status}: ${response.statusText}`, data, { service: 'Payments' });
     throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
   
-  return await response.json();
+  return data;
 }
 
 export interface RequestOtpPayload {
@@ -58,7 +66,10 @@ export interface TransactionStatusResponse {
 }
 
 export async function requestDebitOtp(payload: RequestOtpPayload): Promise<void> {
-  const response = await fetch(API_ENDPOINTS.payments.requestOtp(), {
+  const url = API_ENDPOINTS.payments.requestOtp();
+  logger.request('POST', url, payload, { service: 'Payments' });
+  
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -66,22 +77,45 @@ export async function requestDebitOtp(payload: RequestOtpPayload): Promise<void>
     body: JSON.stringify(payload),
   });
   
+  // Intentar parsear el body de la respuesta
+  let data: unknown = null;
+  try {
+    const text = await response.text();
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        // Si no es JSON válido, guardar como string
+        data = text;
+      }
+    }
+  } catch (e) {
+    // Si no hay body, data queda null
+  }
+  
+  logger.response('POST', url, response.status, data, { service: 'Payments' });
+  
   if (!response.ok) {
     let errorMessage = `Error ${response.status}: ${response.statusText}`;
     
     try {
-      const errorData = await response.json();
-      if (errorData.message) {
-        errorMessage = errorData.message;
-      } else if (errorData.error) {
-        errorMessage = errorData.error;
-      } else if (typeof errorData === 'string') {
-        errorMessage = errorData;
+      if (data) {
+        if (typeof data === 'object' && data !== null) {
+          const errorData = data as { message?: string; error?: string };
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        }
       }
     } catch (e) {
       // Si no se puede parsear el JSON, usar el mensaje por defecto
     }
     
+    logger.error(errorMessage, data, { service: 'Payments' });
     throw new Error(errorMessage);
   }
 }
@@ -91,9 +125,10 @@ export async function requestDebitOtp(payload: RequestOtpPayload): Promise<void>
  * Este transaction_id identifica el intento de débito en SyPago
  */
 export async function processDebit(payload: ProcessDebitPayload): Promise<ProcessDebitResponse> {
-  console.log('Procesando débito con booking_id:', payload.booking_id);
+  const url = API_ENDPOINTS.payments.processDebit();
+  logger.request('POST', url, payload, { service: 'Payments' });
   
-  const response = await fetch(API_ENDPOINTS.payments.processDebit(), {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -101,28 +136,30 @@ export async function processDebit(payload: ProcessDebitPayload): Promise<Proces
     body: JSON.stringify(payload),
   });
   
+  const data = await response.json();
+  logger.response('POST', url, response.status, data, { service: 'Payments' });
+  
   if (!response.ok) {
     let errorMessage = `Error ${response.status}: ${response.statusText}`;
     
     try {
-      const errorData = await response.json();
-      if (errorData.message) {
-        errorMessage = errorData.message;
-      } else if (errorData.error) {
-        errorMessage = errorData.error;
-      } else if (typeof errorData === 'string') {
-        errorMessage = errorData;
+      if (data.message) {
+        errorMessage = data.message;
+      } else if (data.error) {
+        errorMessage = data.error;
+      } else if (typeof data === 'string') {
+        errorMessage = data;
       }
     } catch (e) {
       // Si no se puede parsear el JSON, usar el mensaje por defecto
     }
     
+    logger.error(errorMessage, data, { service: 'Payments' });
     throw new Error(errorMessage);
   }
   
-  const result: ProcessDebitResponse = await response.json();
-  console.log('Respuesta de processDebit:', result);
-  console.log('Transaction ID generado por SyPago:', result.transaction_id);
+  const result: ProcessDebitResponse = data;
+  logger.info('Transaction ID generado por SyPago', { transaction_id: result.transaction_id }, { service: 'Payments' });
   
   return result;
 }
@@ -134,34 +171,36 @@ export async function getTransactionStatus(
   transactionId: string,
   bookingId: string
 ): Promise<TransactionStatusResponse> {
+  const url = API_ENDPOINTS.payments.transactionStatus(transactionId, bookingId);
+  const queryParams = { transactionId, bookingId };
   
-  console.log('transactionId', transactionId);
-  console.log('bookingId', bookingId);
+  logger.request('GET', url, queryParams, { service: 'Payments' });
   
-  const response = await fetch(
-    API_ENDPOINTS.payments.transactionStatus(transactionId, bookingId)
-  );
+  const response = await fetch(url);
+  const data = await response.json();
+  
+  logger.response('GET', url, response.status, data, { service: 'Payments' });
   
   if (!response.ok) {
     let errorMessage = `Error ${response.status}: ${response.statusText}`;
     
     try {
-      const errorData = await response.json();
-      if (errorData.message) {
-        errorMessage = errorData.message;
-      } else if (errorData.error) {
-        errorMessage = errorData.error;
-      } else if (typeof errorData === 'string') {
-        errorMessage = errorData;
+      if (data.message) {
+        errorMessage = data.message;
+      } else if (data.error) {
+        errorMessage = data.error;
+      } else if (typeof data === 'string') {
+        errorMessage = data;
       }
     } catch (e) {
       // Si no se puede parsear el JSON, usar el mensaje por defecto
     }
     
+    logger.error(errorMessage, data, { service: 'Payments' });
     throw new Error(errorMessage);
   }
   
-  return await response.json();
+  return data;
 }
 
 /**

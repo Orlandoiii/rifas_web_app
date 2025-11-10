@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"net/http"
+	// "net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"raffle_web_server/config"
-	"raffle_web_server/middlewares"
+	// "raffle_web_server/middlewares"
 	"raffle_web_server/mock"
 	"syscall"
 
@@ -16,6 +16,7 @@ import (
 )
 
 func SetCORSHeaders() gin.HandlerFunc {
+	
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 
@@ -73,20 +74,20 @@ func main() {
 
 	router := gin.Default()
 
-	router.Use(SecurityHeaders())
+	//router.Use(SecurityHeaders())
 
 	router.Use(SetCORSHeaders())
 
-	imagesDir := filepath.Join(execPath, "public", "images")
+	// imagesDir := filepath.Join(execPath, "public", "images")
 
-	router.StaticFS("/images", http.Dir(imagesDir))
+	// router.StaticFS("/images", http.Dir(imagesDir))
 
-	webAssetsDir := filepath.Join(execPath, "web")
+	// webAssetsDir := filepath.Join(execPath, "web")
 
-	fmt.Println("Web Assets Dir:", webAssetsDir)
+	// fmt.Println("Web Assets Dir:", webAssetsDir)
 
-	router.Use(middlewares.ServeStaticAssets(middlewares.
-		NewStaticAssetsConfig(webAssetsDir, "/", "index.html", []string{}, []string{}, nil)))
+	// router.Use(middlewares.ServeStaticAssets(middlewares.
+	// 	NewStaticAssetsConfig(webAssetsDir, "/", "index.html", []string{}, []string{}, nil)))
 
 	if config.GetConfig().MockConfig.Enabled {
 		mock.ActivateRoutesForMock(router)
