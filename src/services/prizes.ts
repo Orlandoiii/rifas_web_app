@@ -44,7 +44,7 @@ export const prizesService: IPrizesService = {
       }
       
       logger.error('Error al obtener premio bless', { errorMessage, data }, { service: 'Prizes' });
-      throw new Error(errorMessage);
+      throw new Error(errorMessage || `Error al obtener el premio. Código: ${response.status}`);
     }
     
     return data;

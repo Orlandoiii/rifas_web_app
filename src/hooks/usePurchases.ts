@@ -52,7 +52,7 @@ export function usePurchases() {
         setPurchases([]);
       }
     } catch (error) {
-      console.error('Failed to parse purchases from localStorage', error);
+      console.error('Error al parsear compras desde localStorage', error);
       localStorage.removeItem(LOCAL_STORAGE_KEY);
       setPurchases([]);
     }
@@ -89,7 +89,7 @@ export function usePurchases() {
         currentPurchasesWithTimestamp = Array.isArray(parsed) ? parsed : [];
       }
     } catch (error) {
-      console.error('Error loading purchases for save:', error);
+      console.error('Error al cargar compras para guardar:', error);
     }
 
     // Verificar si ya existe una compra con el mismo transactionId

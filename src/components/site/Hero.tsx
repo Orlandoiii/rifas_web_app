@@ -4,6 +4,7 @@ import { Loader } from '../../components/lib/components/loader';
 import { useTheme } from '../../components/lib/components/theme';
 import type { RaffleSummary } from '../../types/raffles';
 import { isRaffleFinished } from '../../utils/raffles';
+import { ACTIVATE_RAFFLE_TIME_COUNTER } from '../../config/raffleFeatures';
 
 
 function useResolvedTheme(theme: 'dark' | 'light' | 'system') {
@@ -73,7 +74,9 @@ function RaffleDetails({ raffle, timeLeft, onBuy, onVerify }: { raffle: RaffleSu
       </p>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-4">
         <Chip className="text-selected font-semibold text-base md:text-lg bg-bg-secondary/70 backdrop-blur-md">{raffle.price.toFixed(2)} {raffle.currency} / ticket</Chip>
-        <Chip className="text-text-primary text-sm md:text-base bg-bg-secondary/70 backdrop-blur-md">Finaliza en: <span className="font-semibold text-selected">{timeLeft}</span></Chip>
+        {ACTIVATE_RAFFLE_TIME_COUNTER && (
+          <Chip className="text-text-primary text-sm md:text-base bg-bg-secondary/70 backdrop-blur-md">Finaliza en: <span className="font-semibold text-selected">{timeLeft}</span></Chip>
+        )}
       </div>
       <div className="mt-6 flex flex-col items-center gap-3">
         {isFinished ? (
@@ -116,7 +119,7 @@ interface HeroProps {
 
 export default function Hero({ raffle, isLoading = false, isError = false, onBuy, onVerify }: HeroProps) {
   const { theme } = useTheme();
-  const timeLeft = useCountdown(raffle?.endsAt);
+  const timeLeft = ACTIVATE_RAFFLE_TIME_COUNTER ? useCountdown(raffle?.endsAt) : '';
   const resolvedTheme = useResolvedTheme(theme);
 
   return (

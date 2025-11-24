@@ -14,7 +14,7 @@ export const rafflesService: IRafflesService = {
     
     if (!response.ok) {
       logger.error(`Error ${response.status}: ${response.statusText}`, data, { service: 'Raffles' });
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      throw new Error(`Error al obtener las rifas. Código: ${response.status}`);
     }
     
     return data;
@@ -31,7 +31,7 @@ export const rafflesService: IRafflesService = {
     
     if (!response.ok) {
       logger.error(`Error ${response.status}: ${response.statusText}`, data, { service: 'Raffles' });
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      throw new Error(`Error al obtener los tickets vendidos. Código: ${response.status}`);
     }
     
     return data;
@@ -60,7 +60,7 @@ export const rafflesService: IRafflesService = {
 
     if (!response.ok) {
       logger.error(`Error ${response.status}: ${response.statusText}`, data, { service: 'Raffles' });
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      throw new Error(`Error al crear el participante. Código: ${response.status}`);
     }
 
     return data;
@@ -103,7 +103,7 @@ export const rafflesService: IRafflesService = {
       }
       
       logger.error(errorMessage, data, { service: 'Raffles' });
-      throw new Error(errorMessage);
+      throw new Error(errorMessage || `Error al procesar la solicitud. Código: ${response.status}`);
     }
 
     return data;
@@ -120,7 +120,7 @@ export const rafflesService: IRafflesService = {
     
     if (!response.ok) {
       logger.error(`Error ${response.status}: ${response.statusText}`, data, { service: 'Raffles' });
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      throw new Error(`Error al obtener los números ganadores principales. Código: ${response.status}`);
     }
     
     return data;
@@ -137,7 +137,7 @@ export const rafflesService: IRafflesService = {
     
     if (!response.ok) {
       logger.error(`Error ${response.status}: ${response.statusText}`, data, { service: 'Raffles' });
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      throw new Error(`Error al obtener los números ganadores bless. Código: ${response.status}`);
     }
     
     return data;

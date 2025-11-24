@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../button';
 import { StepperHeader } from './StepperHeader';
 import type { StepperProps } from './types';
+import { extractErrorMessage } from '../../../../utils/errorMessages';
 
 
 const slideVariants = {
@@ -77,7 +78,11 @@ export function Stepper<T>(props: StepperProps<T>) {
             await steps[index]?.onPrev?.(data);
             setIndex(index - 1);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Error al retroceder');
+            const message = extractErrorMessage(
+              err,
+              'Error al retroceder. Por favor, intente nuevamente.'
+            );
+            setError(message);
         } finally {
             setIsProcessing(false);
         }
@@ -95,7 +100,11 @@ export function Stepper<T>(props: StepperProps<T>) {
             await steps[index]?.onNext?.(data);
             setIndex(index + 1);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Error al continuar');
+            const message = extractErrorMessage(
+              err,
+              'Error al continuar. Por favor, intente nuevamente.'
+            );
+            setError(message);
         } finally {
             setIsProcessing(false);
         }

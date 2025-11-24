@@ -285,8 +285,22 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 setPurchaseSuccess(successData);
             }, 300);
         } else if (result.finalStatus === 'RJCT') {
-            // Pago rechazado - mostrar razón
-            throw new Error(result.rsn || 'El pago fue rechazado. Por favor, verifique sus datos e intente nuevamente.');
+            // Pago rechazado - incluir código de rechazo si está disponible
+            let errorMessage = result.rsn || 'El pago fue rechazado. Por favor, verifique sus datos e intente nuevamente.';
+            
+            // Si hay código de rechazo, incluirlo en el mensaje para que OTPVerification pueda buscarlo
+            if (result.reject_code) {
+                errorMessage = `El pago fue rechazado. Código: ${result.reject_code}. ${errorMessage}`;
+            } else {
+                // Intentar extraer código del rsn si tiene formato "code: XX" o similar
+                const codeMatch = result.rsn?.match(/code:\s*([A-Z0-9]+)/i) || 
+                                 result.rsn?.match(/código:\s*([A-Z0-9]+)/i);
+                if (codeMatch && codeMatch[1]) {
+                    errorMessage = `El pago fue rechazado. Código: ${codeMatch[1]}. ${errorMessage}`;
+                }
+            }
+            
+            throw new Error(errorMessage);
         } else if (result.finalStatus === 'TIMEOUT') {
             // Timeout - mostrar mensaje especial
             throw new Error(result.rsn || 'El tiempo de espera ha expirado. Por favor, contacte con soporte.');

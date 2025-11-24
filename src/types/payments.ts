@@ -3,4 +3,9 @@ export type Bank = {
   name: string;
 };
 
+export type RejectCode = {
+  code: string;
+  description: string;
+};
+
 

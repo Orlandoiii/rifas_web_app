@@ -2,13 +2,14 @@ import { Trophy, Calendar, DollarSign } from 'lucide-react';
 import type { RaffleSummary } from '../../types/raffles';
 import { useCountdown } from './Hero';
 import { isRaffleFinished } from '../../utils/raffles';
+import { ACTIVATE_RAFFLE_TIME_COUNTER } from '../../config/raffleFeatures';
 
 interface VerifyRaffleDetailsProps {
   raffle: RaffleSummary;
 }
 
 export default function VerifyRaffleDetails({ raffle }: VerifyRaffleDetailsProps) {
-  const timeLeft = useCountdown(raffle.endsAt);
+  const timeLeft = ACTIVATE_RAFFLE_TIME_COUNTER ? useCountdown(raffle.endsAt) : '';
   const isFinished = isRaffleFinished(raffle);
 
   const formatCurrency = (amount: number, currency: string) => {
@@ -19,8 +20,8 @@ export default function VerifyRaffleDetails({ raffle }: VerifyRaffleDetailsProps
     }).format(amount);
   };
 
-  const soldPct = Math.round((raffle.totalSold / Math.max(1, raffle.ticketsTotal)) * 100);
-  const available = Math.max(0, raffle.ticketsTotal - raffle.totalSold);
+  const soldPct = ACTIVATE_RAFFLE_TIME_COUNTER ? Math.round((raffle.totalSold / Math.max(1, raffle.ticketsTotal)) * 100) : 0;
+  const available = ACTIVATE_RAFFLE_TIME_COUNTER ? Math.max(0, raffle.ticketsTotal - raffle.totalSold) : 0;
 
   return (
     <div className="bg-bg-secondary rounded-2xl overflow-hidden border border-border-light shadow-lg">
@@ -45,7 +46,7 @@ export default function VerifyRaffleDetails({ raffle }: VerifyRaffleDetailsProps
       {/* Información de la rifa */}
       <div className="p-6 space-y-6">
         {/* Stats principales */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className={`grid gap-4 ${ACTIVATE_RAFFLE_TIME_COUNTER ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'}`}>
           <div className="bg-bg-tertiary rounded-xl p-4 border border-border-light">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-5 h-5 text-mint-main" />
@@ -56,24 +57,28 @@ export default function VerifyRaffleDetails({ raffle }: VerifyRaffleDetailsProps
             </p>
           </div>
 
-          <div className="bg-bg-tertiary rounded-xl p-4 border border-border-light">
-            <div className="flex items-center gap-2 mb-2">
-              <Trophy className="w-5 h-5 text-binance-main" />
-              <span className="text-xs text-text-muted">Vendidos</span>
-            </div>
-            <p className="text-lg font-bold text-text-primary">
-              {raffle.totalSold.toLocaleString()}
-            </p>
-          </div>
+          {ACTIVATE_RAFFLE_TIME_COUNTER && (
+            <>
+              <div className="bg-bg-tertiary rounded-xl p-4 border border-border-light">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="w-5 h-5 text-binance-main" />
+                  <span className="text-xs text-text-muted">Vendidos</span>
+                </div>
+                <p className="text-lg font-bold text-text-primary">
+                  {raffle.totalSold.toLocaleString()}
+                </p>
+              </div>
 
-          <div className="bg-bg-tertiary rounded-xl p-4 border border-border-light">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-text-muted">Disponibles</span>
-            </div>
-            <p className="text-lg font-bold text-mint-main">
-              {available.toLocaleString()}
-            </p>
-          </div>
+              <div className="bg-bg-tertiary rounded-xl p-4 border border-border-light">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs text-text-muted">Disponibles</span>
+                </div>
+                <p className="text-lg font-bold text-mint-main">
+                  {available.toLocaleString()}
+                </p>
+              </div>
+            </>
+          )}
 
           <div className="bg-bg-tertiary rounded-xl p-4 border border-border-light">
             <div className="flex items-center gap-2 mb-2">
@@ -87,21 +92,23 @@ export default function VerifyRaffleDetails({ raffle }: VerifyRaffleDetailsProps
         </div>
 
         {/* Barra de progreso */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-text-primary">Progreso de ventas</span>
-            <span className="text-sm text-text-secondary">{soldPct}%</span>
+        {ACTIVATE_RAFFLE_TIME_COUNTER && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-text-primary">Progreso de ventas</span>
+              <span className="text-sm text-text-secondary">{soldPct}%</span>
+            </div>
+            <div className="w-full h-3 bg-bg-tertiary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-linear-to-r from-mint-main to-mint-dark transition-all duration-500"
+                style={{ width: `${soldPct}%` }}
+              />
+            </div>
           </div>
-          <div className="w-full h-3 bg-bg-tertiary rounded-full overflow-hidden">
-            <div
-              className="h-full bg-linear-to-r from-mint-main to-mint-dark transition-all duration-500"
-              style={{ width: `${soldPct}%` }}
-            />
-          </div>
-        </div>
+        )}
 
         {/* Información de tiempo */}
-        {!isFinished && (
+        {ACTIVATE_RAFFLE_TIME_COUNTER && !isFinished && (
           <div className="bg-bg-tertiary rounded-xl p-4 border border-border-light">
             <div className="flex items-center justify-between">
               <span className="text-sm text-text-muted">Tiempo restante:</span>

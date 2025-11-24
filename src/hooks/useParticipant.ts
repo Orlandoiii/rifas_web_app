@@ -27,7 +27,7 @@ export function useParticipant() {
         setParticipant(data);
       }
     } catch (error) {
-      console.error('Error loading participant data from localStorage:', error);
+      console.error('Error al cargar datos del participante desde localStorage:', error);
     } finally {
       setIsLoading(false);
     }
@@ -41,7 +41,7 @@ export function useParticipant() {
       localStorage.setItem(PARTICIPANT_STORAGE_KEY, JSON.stringify(data));
       setParticipant(data);
     } catch (error) {
-      console.error('Error saving participant data to localStorage:', error);
+      console.error('Error al guardar datos del participante en localStorage:', error);
     }
   };
 
@@ -63,7 +63,7 @@ export function useParticipant() {
       localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
       setParticipant(null);
     } catch (error) {
-      console.error('Error clearing participant data from localStorage:', error);
+      console.error('Error al limpiar datos del participante de localStorage:', error);
     }
   };
 

@@ -1,4 +1,4 @@
-import type { Bank } from '../types/payments';
+import type { Bank, RejectCode } from '../types/payments';
 import { API_ENDPOINTS } from '../config/api';
 import { logger } from './logger';
 
@@ -13,7 +13,24 @@ export async function getBanks(signal?: AbortSignal): Promise<Bank[]> {
   
   if (!response.ok) {
     logger.error(`Error ${response.status}: ${response.statusText}`, data, { service: 'Payments' });
-    throw new Error(`Error ${response.status}: ${response.statusText}`);
+    throw new Error(`Error al obtener la lista de bancos. Código: ${response.status}`);
+  }
+  
+  return data;
+}
+
+export async function getSypagoRejectCodes(signal?: AbortSignal): Promise<RejectCode[]> {
+  const url = API_ENDPOINTS.payments.rejectCodes();
+  logger.request('GET', url, undefined, { service: 'Payments' });
+  
+  const response = await fetch(url, { signal });
+  const data = await response.json();
+  
+  logger.response('GET', url, response.status, data, { service: 'Payments' });
+  
+  if (!response.ok) {
+    logger.error(`Error ${response.status}: ${response.statusText}`, data, { service: 'Payments' });
+    throw new Error(`Error al obtener los códigos de rechazo. Código: ${response.status}`);
   }
   
   return data;
@@ -62,6 +79,7 @@ export interface TransactionStatusResponse {
   ref_ibp: string;
   status: string;  // Puede ser cualquier string del backend
   rsn: string;
+  reject_code?: string;  // Código de rechazo (ej: "AB01", "MD09", etc.)
   bless_numbers?: number[];
 }
 
@@ -116,7 +134,7 @@ export async function requestDebitOtp(payload: RequestOtpPayload): Promise<void>
     }
     
     logger.error(errorMessage, data, { service: 'Payments' });
-    throw new Error(errorMessage);
+    throw new Error(errorMessage || `Error al procesar la solicitud. Código: ${response.status}`);
   }
 }
 
@@ -155,7 +173,7 @@ export async function processDebit(payload: ProcessDebitPayload): Promise<Proces
     }
     
     logger.error(errorMessage, data, { service: 'Payments' });
-    throw new Error(errorMessage);
+    throw new Error(errorMessage || `Error al procesar la solicitud. Código: ${response.status}`);
   }
   
   const result: ProcessDebitResponse = data;
@@ -197,7 +215,7 @@ export async function getTransactionStatus(
     }
     
     logger.error(errorMessage, data, { service: 'Payments' });
-    throw new Error(errorMessage);
+    throw new Error(errorMessage || `Error al procesar la solicitud. Código: ${response.status}`);
   }
   
   return data;

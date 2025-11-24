@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { Button } from '../../lib/components/button';
+import { extractErrorMessage } from '../../../utils/errorMessages';
+import { useSypagoRejectCodes } from '../../../hooks/usePayments';
 
 interface OTPVerificationProps {
   raffleTitle: string;
@@ -28,8 +30,38 @@ export default function OTPVerification({
   const [error, setError] = React.useState<string>('');
   const [processingStatus, setProcessingStatus] = React.useState<string | null>(null);
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const { data: rejectCodes = [] } = useSypagoRejectCodes();
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
+
+  // Función para obtener la descripción de un código de rechazo
+  const getRejectCodeDescription = React.useCallback((rejectCode: string): string | null => {
+    if (!rejectCode || !rejectCodes.length) return null;
+    const code = rejectCodes.find(rc => rc.code === rejectCode);
+    return code ? code.description : null;
+  }, [rejectCodes]);
+
+  // Función para formatear el mensaje de error con código de rechazo
+  const formatRejectionError = React.useCallback((errorMessage: string): string => {
+    if (!rejectCodes.length) return errorMessage;
+    
+    // Buscar código de rechazo en el mensaje (diferentes formatos posibles)
+    const codeMatch = errorMessage.match(/[Cc]ódigo:\s*([A-Z0-9]{2,6})/i) || 
+                     errorMessage.match(/[Cc]ode:\s*([A-Z0-9]{2,6})/i) ||
+                     errorMessage.match(/\b([A-Z]{2,4}\d{2,4})\b/);
+    
+    if (codeMatch && codeMatch[1]) {
+      const rejectCode = codeMatch[1].toUpperCase();
+      const description = getRejectCodeDescription(rejectCode);
+      
+      if (description) {
+        // Reemplazar el mensaje original con la descripción del código
+        return `El pago fue rechazado. ${description}`;
+      }
+    }
+    
+    return errorMessage;
+  }, [getRejectCodeDescription, rejectCodes]);
 
   // Auto-focus en el primer input cuando se monta el componente
   React.useEffect(() => {
@@ -89,7 +121,16 @@ export default function OTPVerification({
           setProcessingStatus(status);
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error al verificar el código OTP';
+        let message = extractErrorMessage(
+          err,
+          'Error al verificar el código OTP. Por favor, verifique el código e intente nuevamente.'
+        );
+        
+        // Si el mensaje parece ser un rechazo (RJCT), intentar formatear con código de rechazo
+        if (message.includes('rechazado') || message.includes('rejected') || message.includes('RJCT')) {
+          message = formatRejectionError(message);
+        }
+        
         setError(message);
         setProcessingStatus(null);
       } finally {
@@ -105,7 +146,10 @@ export default function OTPVerification({
     try {
       await onResend();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al reenviar el código OTP';
+      const message = extractErrorMessage(
+        err,
+        'Error al reenviar el código OTP. Por favor, intente nuevamente.'
+      );
       setError(message);
     } finally {
       setIsResending(false);

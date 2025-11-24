@@ -42,7 +42,7 @@ export const InputMaskProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 export const useInputMaskContext = () => {
     const context = useContext(InputMaskContext);
     if (!context) {
-        throw new Error('useInputMaskContext must be used within InputMaskProvider');
+        throw new Error('useInputMaskContext debe ser usado dentro de un InputMaskProvider');
     }
     return context;
 };
