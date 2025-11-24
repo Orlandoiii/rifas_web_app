@@ -15,7 +15,7 @@ export const API_ENDPOINTS = {
   },
   payments: {
     banks: () => `${API_BASE_URL}/sypago/banks`,
-    rejectCodes: () => `${API_BASE_URL}/sypago/banks/reject_codes`,
+    rejectCodes: () => `${API_BASE_URL}/sypago/reject_codes`,
     requestOtp: () => `${API_BASE_URL}/sypago/debit/request-otp`,
     processDebit: () => `${API_BASE_URL}/sypago/debit/transaction-otp`,
     transactionStatus: (transactionId: string, bookingId: string) => 
