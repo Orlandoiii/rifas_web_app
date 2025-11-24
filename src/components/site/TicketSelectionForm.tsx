@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '../lib/components/button';
 import { Loader } from '../lib/components/loader';
 import type { RaffleDetail, RaffleTicket } from '../../types/raffles';
@@ -11,6 +11,12 @@ interface TicketSelectionFormProps {
     onSelectedChange: (selected: number[]) => void;
 }
 
+// Constantes para virtualización
+const TICKET_HEIGHT = 48; // Altura aproximada de cada ticket (h-12 = 48px en md, h-10 = 40px en mobile)
+const VISIBLE_ROWS = 6; // Número de filas visibles (aproximadamente 60 tickets en desktop con 10 columnas)
+const CONTAINER_HEIGHT = TICKET_HEIGHT * VISIBLE_ROWS; // Altura del contenedor (~288px)
+const OVERSCAN_ROWS = 3; // Filas adicionales a renderizar fuera del viewport para scroll suave
+
 export default function TicketSelectionForm({
     detail,
     loadingTickets,
@@ -18,26 +24,50 @@ export default function TicketSelectionForm({
     selected,
     onSelectedChange
 }: TicketSelectionFormProps) {
-    const [page, setPage] = useState(0);
     const [jumpValue, setJumpValue] = useState('');
     const [showSelected, setShowSelected] = useState(false);
-    const pageSize = 50;
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [scrollTop, setScrollTop] = useState(0);
 
     const availableTickets = useMemo(
         () => (detail?.tickets || []).filter(n => n.status === 'available'),
         [detail]
     );
 
-    const totalPages = useMemo(
-        () => Math.max(1, Math.ceil(((detail?.tickets?.length) || 0) / pageSize)),
-        [detail]
-    );
+    const allTickets = useMemo(() => detail?.tickets || [], [detail]);
 
-    const pageTickets = useMemo(() => {
-        const tickets = detail?.tickets || [];
-        const start = page * pageSize;
-        return tickets.slice(start, start + pageSize);
-    }, [detail, page]);
+    // Calcular qué tickets renderizar basado en el scroll
+    // Usamos 10 columnas como base (máximo en desktop) para cálculo conservador
+    const ticketsPerRow = 10;
+    const rowHeight = TICKET_HEIGHT;
+    
+    const visibleRange = useMemo(() => {
+        if (!allTickets.length) return { start: 0, end: 0, startRow: 0 };
+        
+        const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - OVERSCAN_ROWS);
+        const endRow = Math.ceil((scrollTop + CONTAINER_HEIGHT) / rowHeight) + OVERSCAN_ROWS;
+        
+        const start = Math.max(0, startRow * ticketsPerRow);
+        const end = Math.min(allTickets.length, endRow * ticketsPerRow);
+        
+        return { start, end, startRow };
+    }, [scrollTop, allTickets.length]);
+
+    const visibleTickets = useMemo(() => {
+        return allTickets.slice(visibleRange.start, visibleRange.end);
+    }, [allTickets, visibleRange.start, visibleRange.end]);
+
+    // Altura total del contenido virtual
+    const totalHeight = useMemo(() => {
+        if (!allTickets.length) return CONTAINER_HEIGHT;
+        const totalRows = Math.ceil(allTickets.length / ticketsPerRow);
+        return totalRows * rowHeight;
+    }, [allTickets.length]);
+
+    // Offset superior para el padding virtual
+    const offsetY = useMemo(() => {
+        return visibleRange.startRow * rowHeight;
+    }, [visibleRange.startRow]);
 
     const toggleTicket = (ticket: RaffleTicket) => {
         if (ticket.status !== 'available') return;
@@ -59,19 +89,43 @@ export default function TicketSelectionForm({
         onSelectedChange([...selected, ...picks]);
     };
 
-    const jumpToNumber = () => {
+    const jumpToNumber = useCallback(() => {
         const n = parseInt(jumpValue, 10);
-        if (!isNaN(n) && detail?.tickets) {
-            const ticket = detail.tickets.find(t => t.number === n);
+        if (!isNaN(n) && allTickets.length && scrollContainerRef.current) {
+            const ticket = allTickets.find(t => t.number === n);
             if (ticket) {
-                const ticketIndex = detail.tickets.indexOf(ticket);
-                setPage(Math.floor(ticketIndex / pageSize));
+                const ticketIndex = allTickets.indexOf(ticket);
+                const rowIndex = Math.floor(ticketIndex / ticketsPerRow);
+                const targetScrollTop = rowIndex * rowHeight;
+                
+                // Hacer scroll al ticket con comportamiento suave
+                scrollContainerRef.current.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
+                
+                // Seleccionar el ticket si está disponible
                 if (ticket.status === 'available' && !selected.includes(n)) {
                     onSelectedChange([...selected, n]);
                 }
+                
+                // Limpiar el input
+                setJumpValue('');
             }
         }
-    };
+    }, [jumpValue, allTickets, selected, onSelectedChange]);
+
+    // Manejar scroll
+    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        setScrollTop(e.currentTarget.scrollTop);
+    }, []);
+
+    // Abrir dropdown de seleccionados automáticamente cuando hay tickets seleccionados
+    useEffect(() => {
+        if (selected.length > 0 && !showSelected) {
+            setShowSelected(true);
+        }
+    }, [selected.length, showSelected]);
 
     const TicketBadge = ({ ticket }: { ticket: RaffleTicket }) => {
         const isSelected = selected.includes(ticket.number);
@@ -162,7 +216,11 @@ export default function TicketSelectionForm({
 
             <div className="border border-border-light rounded-xl p-3 bg-bg-primary">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
-                    <div className="text-text-secondary text-sm">Página {page + 1} / {totalPages}</div>
+                    <div className="text-text-secondary text-sm">
+                        {allTickets.length > 0 && (
+                            <>Total: {allTickets.length} tickets</>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
                         <input
                             type="number"
@@ -179,42 +237,48 @@ export default function TicketSelectionForm({
                             placeholder="Ir a número..."
                             className="no-spinner ios-zoom-fix bg-bg-secondary border border-border-light rounded-md px-3 py-2 text-base sm:text-sm text-text-primary w-40 focus:border-selected focus:outline-none"
                         />
-                        <Button variant="secondary" size="sm" onClick={jumpToNumber}>
+                        <Button variant="secondary" size="sm" onClick={jumpToNumber} disabled={loadingTickets}>
                             Ir
                         </Button>
                     </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setPage(p => Math.max(0, p - 1))}
-                            disabled={loadingTickets || page === 0}
-                        >
-                            Anterior
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                            disabled={loadingTickets || page >= totalPages - 1}
-                        >
-                            Siguiente
-                        </Button>
-                    </div>
                 </div>
-                <div className="pb-4 md:pb-0 min-h-[200px] flex items-center justify-center">
+                <div 
+                    ref={scrollContainerRef}
+                    onScroll={handleScroll}
+                    className="relative overflow-y-auto overflow-x-hidden"
+                    style={{ 
+                        height: `${CONTAINER_HEIGHT}px`,
+                        maxHeight: `${CONTAINER_HEIGHT}px`
+                    }}
+                >
                     {loadingTickets ? (
-                        <Loader size="md" />
+                        <div className="flex items-center justify-center h-full">
+                            <Loader size="md" />
+                        </div>
                     ) : errorTickets ? (
                         <div className="text-center py-8">
                             <p className="text-text-secondary text-sm">Error al cargar los tickets.</p>
                             <p className="text-text-muted text-xs mt-1">Por favor, intenta nuevamente más tarde.</p>
                         </div>
+                    ) : allTickets.length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-text-secondary text-sm">No hay tickets disponibles.</p>
+                        </div>
                     ) : (
-                        <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 place-items-center w-full">
-                            {pageTickets.map(ticket => (
-                                <TicketBadge key={ticket.number} ticket={ticket} />
-                            ))}
+                        <div 
+                            className="relative"
+                            style={{ height: `${totalHeight}px` }}
+                        >
+                            <div
+                                className="absolute top-0 left-0 right-0"
+                                style={{ transform: `translateY(${offsetY}px)` }}
+                            >
+                                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 place-items-center w-full">
+                                    {visibleTickets.map(ticket => (
+                                        <TicketBadge key={ticket.number} ticket={ticket} />
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
