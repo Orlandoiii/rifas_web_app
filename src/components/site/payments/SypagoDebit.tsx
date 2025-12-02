@@ -20,6 +20,7 @@ interface SypagoDebitProps {
   payload: SypagoDebitPayload;
   onChange: (payload: SypagoDebitPayload) => void;
   disabled?: boolean;
+  onSubmitAttempt?: (callback: () => void) => void;
 }
 
 // Validaciones
@@ -61,7 +62,7 @@ function validateDocNumber(docNumber: string, docType: 'V' | 'E' | 'J' | 'P'): s
   return null;
 }
 
-export default function SypagoDebit({ raffleTitle, selectedNumbers, price, currency, payload, onChange, disabled = false }: SypagoDebitProps) {
+export default function SypagoDebit({ raffleTitle, selectedNumbers, price, currency, payload, onChange, disabled = false, onSubmitAttempt }: SypagoDebitProps) {
   const { data: banks = [], isLoading: loadingBanks, isError: errorBanks } = useBanks();
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
@@ -87,32 +88,49 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
     docNumber?: boolean;
   }>({});
 
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = React.useState(false);
+
+  // Registrar función de activación de validaciones con el stepper
+  React.useEffect(() => {
+    if (onSubmitAttempt) {
+      onSubmitAttempt(() => {
+        // Marcar todos los campos como touched cuando se intenta hacer submit
+        setTouched({
+          bankCode: true,
+          phone: true,
+          docNumber: true
+        });
+        setHasAttemptedSubmit(true);
+      });
+    }
+  }, [onSubmitAttempt]);
+
   // Validar todos los campos
   const isValid = React.useMemo(() => {
     return !errors.bankCode && !errors.phone && !errors.docNumber &&
            payload.bankCode.trim() && payload.phone.trim() && payload.docNumber.trim();
   }, [errors, payload]);
 
-  // Validar en tiempo real
+  // Validar en tiempo real - solo mostrar errores si el campo fue touched O si ya se intentó hacer submit
   React.useEffect(() => {
     const newErrors: typeof errors = {};
     
-    if (touched.bankCode || payload.bankCode) {
+    if (touched.bankCode || (hasAttemptedSubmit && payload.bankCode)) {
       if (!payload.bankCode.trim()) {
         newErrors.bankCode = 'El banco es requerido';
       } else {
         newErrors.bankCode = null;
       }
     }
-    if (touched.phone || payload.phone) {
+    if (touched.phone || (hasAttemptedSubmit && payload.phone)) {
       newErrors.phone = validatePhone(payload.phone);
     }
-    if (touched.docNumber || payload.docNumber) {
+    if (touched.docNumber || (hasAttemptedSubmit && payload.docNumber)) {
       newErrors.docNumber = validateDocNumber(payload.docNumber, payload.docType);
     }
     
     setErrors(newErrors);
-  }, [payload, touched]);
+  }, [payload, touched, hasAttemptedSubmit]);
 
   return (
     <div className="space-y-4">
@@ -142,9 +160,9 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
           </div>
         )}
 
-        {/* Mensaje de error general */}
+        {/* Mensaje de error general - solo mostrar si se intentó hacer submit */}
         <AnimatePresence>
-          {!isValid && (touched.bankCode || touched.phone || touched.docNumber) && (
+          {!isValid && hasAttemptedSubmit && (
             <motion.div
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: 'auto', marginTop: 0 }}
@@ -161,7 +179,10 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
                 </div>
                 <button
                   type="button"
-                  onClick={() => setTouched({})}
+                  onClick={() => {
+                    setTouched({});
+                    setHasAttemptedSubmit(false);
+                  }}
                   className="shrink-0 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
                   aria-label="Cerrar error"
                 >
@@ -197,8 +218,8 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
           }}
           onBlur={() => setTouched(prev => ({ ...prev, phone: true }))}
           disabled={isFormDisabled}
-          error={touched.phone ? errors.phone : undefined}
-          hasSubmitted={touched.phone}
+          error={(touched.phone || hasAttemptedSubmit) ? errors.phone : undefined}
+          hasSubmitted={touched.phone || hasAttemptedSubmit}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
@@ -230,8 +251,8 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
               }}
               onBlur={() => setTouched(prev => ({ ...prev, docNumber: true }))}
               disabled={isFormDisabled}
-              error={touched.docNumber ? errors.docNumber : undefined}
-              hasSubmitted={touched.docNumber}
+              error={(touched.docNumber || hasAttemptedSubmit) ? errors.docNumber : undefined}
+              hasSubmitted={touched.docNumber || hasAttemptedSubmit}
             />
           </div>
         </div>

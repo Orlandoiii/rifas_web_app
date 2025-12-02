@@ -21,6 +21,7 @@ interface UserDataFormProps {
   disabled?: boolean;
   onClearData?: () => void;
   hasStoredData?: boolean;
+  onSubmitAttempt?: (callback: () => void) => void;
 }
 
 // Validaciones
@@ -92,7 +93,8 @@ export default function UserDataForm({
   onChange, 
   disabled = false,
   onClearData,
-  hasStoredData = false 
+  hasStoredData = false,
+  onSubmitAttempt
 }: UserDataFormProps) {
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
@@ -111,31 +113,49 @@ export default function UserDataForm({
     email?: boolean;
   }>({});
 
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = React.useState(false);
+
+  // Registrar función de activación de validaciones con el stepper
+  React.useEffect(() => {
+    if (onSubmitAttempt) {
+      onSubmitAttempt(() => {
+        // Marcar todos los campos como touched cuando se intenta hacer submit
+        setTouched({
+          id: true,
+          name: true,
+          phone: true,
+          email: true
+        });
+        setHasAttemptedSubmit(true);
+      });
+    }
+  }, [onSubmitAttempt]);
+
   // Validar todos los campos
   const isValid = React.useMemo(() => {
     return !errors.id && !errors.name && !errors.phone && !errors.email &&
            buyer.id.trim() && buyer.name.trim() && buyer.phone.trim() && buyer.email.trim();
   }, [errors, buyer]);
 
-  // Validar en tiempo real
+  // Validar en tiempo real - solo mostrar errores si el campo fue touched O si ya se intentó hacer submit
   React.useEffect(() => {
     const newErrors: typeof errors = {};
     
-    if (touched.id || buyer.id) {
+    if (touched.id || (hasAttemptedSubmit && buyer.id)) {
       newErrors.id = validateId(buyer.id);
     }
-    if (touched.name || buyer.name) {
+    if (touched.name || (hasAttemptedSubmit && buyer.name)) {
       newErrors.name = validateName(buyer.name);
     }
-    if (touched.phone || buyer.phone) {
+    if (touched.phone || (hasAttemptedSubmit && buyer.phone)) {
       newErrors.phone = validatePhone(buyer.phone);
     }
-    if (touched.email || buyer.email) {
+    if (touched.email || (hasAttemptedSubmit && buyer.email)) {
       newErrors.email = validateEmail(buyer.email);
     }
     
     setErrors(newErrors);
-  }, [buyer, touched]);
+  }, [buyer, touched, hasAttemptedSubmit]);
 
   const handleField = (key: keyof Buyer) => (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
@@ -213,9 +233,9 @@ export default function UserDataForm({
         </div>
       )}
 
-      {/* Mensaje de error general */}
+      {/* Mensaje de error general - solo mostrar si se intentó hacer submit */}
       <AnimatePresence>
-        {!isValid && (touched.id || touched.name || touched.phone || touched.email) && (
+        {!isValid && hasAttemptedSubmit && (
           <motion.div
             initial={{ opacity: 0, height: 0, marginTop: 0 }}
             animate={{ opacity: 1, height: 'auto', marginTop: 0 }}
@@ -232,7 +252,10 @@ export default function UserDataForm({
               </div>
               <button
                 type="button"
-                onClick={() => setTouched({})}
+                onClick={() => {
+                  setTouched({});
+                  setHasAttemptedSubmit(false);
+                }}
                 className="shrink-0 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
                 aria-label="Cerrar error"
               >
@@ -253,8 +276,8 @@ export default function UserDataForm({
             onBlur={() => setTouched(prev => ({ ...prev, id: true }))}
             disabled={disabled}
             type="text"
-            error={touched.id ? errors.id : undefined}
-            hasSubmitted={touched.id}
+            error={(touched.id || hasAttemptedSubmit) ? errors.id : undefined}
+            hasSubmitted={touched.id || hasAttemptedSubmit}
           />
         </div>
         <div>
@@ -266,8 +289,8 @@ export default function UserDataForm({
             onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
             disabled={disabled}
             type="text"
-            error={touched.name ? errors.name : undefined}
-            hasSubmitted={touched.name}
+            error={(touched.name || hasAttemptedSubmit) ? errors.name : undefined}
+            hasSubmitted={touched.name || hasAttemptedSubmit}
           />
         </div>
         <div>
@@ -279,8 +302,8 @@ export default function UserDataForm({
             onBlur={() => setTouched(prev => ({ ...prev, phone: true }))}
             disabled={disabled}
             type="text"
-            error={touched.phone ? errors.phone : undefined}
-            hasSubmitted={touched.phone}
+            error={(touched.phone || hasAttemptedSubmit) ? errors.phone : undefined}
+            hasSubmitted={touched.phone || hasAttemptedSubmit}
           />
         </div>
         <div>
@@ -292,8 +315,8 @@ export default function UserDataForm({
             onChange={handleField('email')}
             onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
             disabled={disabled}
-            error={touched.email ? errors.email : undefined}
-            hasSubmitted={touched.email}
+            error={(touched.email || hasAttemptedSubmit) ? errors.email : undefined}
+            hasSubmitted={touched.email || hasAttemptedSubmit}
           />
         </div>
       </div>

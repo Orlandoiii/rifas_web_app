@@ -6,6 +6,7 @@ export type StepRenderArgs<T> = {
     index: number;
     total: number;
     isProcessing: boolean;
+    onSubmitAttempt?: (callback: () => void) => void;
 };
 
 export type Step<T> = {

@@ -50,6 +50,7 @@ export function Stepper<T>(props: StepperProps<T>) {
     const [error, setError] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const validatingRef = useRef<number>(0);
+    const submitAttemptRef = useRef<(() => void) | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -65,9 +66,10 @@ export function Stepper<T>(props: StepperProps<T>) {
         return () => { cancelled = true; };
     }, [index, data, steps]);
 
-    // Limpiar error cuando cambia el paso
+    // Limpiar error y resetear submit attempt cuando cambia el paso
     useEffect(() => {
         setError(null);
+        submitAttemptRef.current = null;
     }, [index]);
 
     const goBack = useCallback(async () => {
@@ -89,7 +91,23 @@ export function Stepper<T>(props: StepperProps<T>) {
     }, [index, steps, data, setIndex, isProcessing]);
 
     const goNext = useCallback(async () => {
-        if (!canNext || isProcessing) return;
+        if (isProcessing) return;
+        
+        // Notificar al formulario que se intentó hacer submit (para activar validaciones)
+        if (submitAttemptRef.current) {
+            submitAttemptRef.current();
+        }
+        
+        // Re-validar después de activar las validaciones del formulario
+        const v = steps[index]?.validate;
+        if (v) {
+            const isValid = await v(data);
+            if (!isValid) {
+                // No avanzar si no es válido, pero ya se activaron los errores del formulario
+                return;
+            }
+        }
+        
         setError(null);
         try {
             setIsProcessing(true);
@@ -108,7 +126,7 @@ export function Stepper<T>(props: StepperProps<T>) {
         } finally {
             setIsProcessing(false);
         }
-    }, [canNext, index, steps, data, setIndex, onFinish, isProcessing]);
+    }, [index, steps, data, setIndex, onFinish, isProcessing]);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -130,13 +148,18 @@ export function Stepper<T>(props: StepperProps<T>) {
         ? renderHeader({ current: index, total: steps.length })
         : <StepperHeader current={index} total={steps.length} />;
 
+    const handleSubmitAttempt = useCallback((callback: () => void) => {
+        // Los formularios pueden registrar su función de activación de validaciones
+        submitAttemptRef.current = callback;
+    }, []);
+
     const footer = renderFooter
         ? renderFooter({ current: index, total: steps.length, canNext, goNext, goBack, isProcessing })
         : (
             <div className="mt-6 flex items-center justify-between">
                 <Button variant="secondary" onClick={goBack} disabled={index === 0 || isProcessing}>Atrás</Button>
                 <div className="flex-1" />
-                <Button onClick={goNext} disabled={!canNext || isProcessing}>
+                <Button onClick={goNext} disabled={isProcessing}>
                     {isProcessing ? 'Procesando...' : (index === steps.length - 1 ? finishLabel : 'Continuar')}
                 </Button>
             </div>
@@ -199,7 +222,8 @@ export function Stepper<T>(props: StepperProps<T>) {
                             goBack,
                             index,
                             total: steps.length,
-                            isProcessing
+                            isProcessing,
+                            onSubmitAttempt: handleSubmitAttempt
                         })}
                     </motion.div>
                 </AnimatePresence>

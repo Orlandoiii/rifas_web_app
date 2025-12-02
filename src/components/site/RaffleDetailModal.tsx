@@ -361,7 +361,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 // Reservar tickets antes de avanzar al paso de pago
                 await handleReserveTickets();
             },
-            render: ({ data, setData, isProcessing }) => (
+            render: ({ data, setData, isProcessing, onSubmitAttempt }) => (
                 <UserDataForm
                     raffleTitle={detail?.title || ''}
                     price={detail?.price || 0}
@@ -372,6 +372,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     disabled={isProcessing}
                     onClearData={handleClearUserData}
                     hasStoredData={!!participant}
+                    onSubmitAttempt={onSubmitAttempt}
                 />
             )
         },
@@ -382,7 +383,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 // Generar OTP antes de avanzar al paso de verificación
                 await handleGenerateOTP();
             },
-            render: ({ data, setData, isProcessing }) => (
+            render: ({ data, setData, isProcessing, onSubmitAttempt }) => (
                 <SypagoDebit
                     raffleTitle={detail?.title || ''}
                     selectedNumbers={selected}
@@ -391,6 +392,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     payload={data.payment}
                     onChange={(payment) => setData(prev => ({ ...prev, payment }))}
                     disabled={isProcessing}
+                    onSubmitAttempt={onSubmitAttempt}
                 />
             ),
             validate: (d) => {
@@ -476,7 +478,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                                 Atrás
                             </Button>
                             <div className="flex-1" />
-                            <Button onClick={goNext} disabled={!canNext || isProcessing}>
+                            <Button onClick={goNext} disabled={isProcessing}>
                                 {isProcessing ? 'Procesando...' : 'Continuar'}
                             </Button>
                         </div>
