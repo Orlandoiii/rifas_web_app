@@ -312,7 +312,7 @@ utilities;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-coral-main);
+    background: var(--color-selected);
 }
 
 ::-webkit-scrollbar-corner {
@@ -322,4 +322,23 @@ utilities;
 * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-border-light) var(--color-bg-tertiary);
+}
+
+/* Forzar mint como color seleccionado por defecto */
+html,
+html[data-theme="dark"],
+html.dark {
+    --color-selected: var(--color-mint-main);
+    --color-selected-light: var(--color-mint-light);
+    --color-selected-dark: var(--color-mint-dark);
+    --color-selected-hover: var(--color-mint-hover);
+}
+
+/* Asegurar que data-selected="mint" siempre esté aplicado si no hay otro valor */
+html:not([data-selected]),
+html[data-selected=""] {
+    --color-selected: var(--color-mint-main);
+    --color-selected-light: var(--color-mint-light);
+    --color-selected-dark: var(--color-mint-dark);
+    --color-selected-hover: var(--color-mint-hover);
 }

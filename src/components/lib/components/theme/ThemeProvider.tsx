@@ -42,17 +42,43 @@ export function ThemeProvider({
   // Forzar siempre tema oscuro
   const [theme,_] = React.useState<Theme>(() => "dark")
 
-  const [selectedColor, setSelectedColor] = React.useState<SelectedColor>(
-    () => (localStorage.getItem(selectedColorKey) as SelectedColor) || defaultSelectedColor
-  )
+  const [selectedColor, setSelectedColor] = React.useState<SelectedColor>(() => {
+    // Si forceDefaultSelectedColor está activo, siempre usar el default e ignorar localStorage
+    if (forceDefaultSelectedColor) {
+      // Limpiar cualquier valor previo en localStorage
+      localStorage.setItem(selectedColorKey, defaultSelectedColor)
+      return defaultSelectedColor
+    }
+    // Si no, intentar leer de localStorage, pero validar que sea un color válido
+    const stored = localStorage.getItem(selectedColorKey) as SelectedColor
+    const validColors: SelectedColor[] = ["coral", "mint", "electric", "binance"]
+    return stored && validColors.includes(stored) ? stored : defaultSelectedColor
+  })
 
   useEffect(() => {
     if (forceDefaultSelectedColor) {
+      // Forzar el color por defecto y limpiar cualquier valor previo en localStorage
+      // Esto se ejecuta en cada render para asegurar que siempre esté sincronizado
       localStorage.setItem(selectedColorKey, defaultSelectedColor)
-      setSelectedColor(defaultSelectedColor)
+      if (selectedColor !== defaultSelectedColor) {
+        setSelectedColor(defaultSelectedColor)
+      }
     }
-  
-  }, [])
+  }, [forceDefaultSelectedColor, defaultSelectedColor, selectedColorKey, selectedColor])
+
+  // Establecer atributos inmediatamente al montar
+  React.useEffect(() => {
+    const root = window.document.documentElement
+    
+    // Forzar siempre tema oscuro
+    root.classList.remove("light", "dark")
+    root.classList.add("dark")
+    root.setAttribute("data-theme", "dark")
+    
+    // Establecer color seleccionado inmediatamente
+    const colorToUse = forceDefaultSelectedColor ? defaultSelectedColor : selectedColor
+    root.setAttribute("data-selected", colorToUse)
+  }, []) // Solo al montar
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -78,8 +104,10 @@ export function ThemeProvider({
         root.classList.remove('theme-transition')
       }, 300)
     } catch { }
-    root.setAttribute("data-selected", selectedColor)
-  }, [selectedColor])
+    // Asegurar que siempre se establezca el color seleccionado
+    const colorToUse = forceDefaultSelectedColor ? defaultSelectedColor : selectedColor
+    root.setAttribute("data-selected", colorToUse)
+  }, [selectedColor, forceDefaultSelectedColor, defaultSelectedColor])
 
   const value = {
     theme: "dark" as Theme,
@@ -88,6 +116,10 @@ export function ThemeProvider({
       // No permitir cambio de tema, siempre oscuro
     },
     setSelectedColor: (color: SelectedColor) => {
+      // Si forceDefaultSelectedColor está activo, no permitir cambios
+      if (forceDefaultSelectedColor) {
+        return
+      }
       localStorage.setItem(selectedColorKey, color)
       setSelectedColor(color)
     },

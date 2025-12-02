@@ -10,7 +10,7 @@ import { queryClient } from './lib/queryClient'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" forceDefaultSelectedColor>
+      <ThemeProvider defaultTheme="dark" defaultSelectedColor="mint" forceDefaultSelectedColor>
         <LoadModalProvider>
           <App />
         </LoadModalProvider>
