@@ -120,8 +120,19 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [isLoadingPrize, setIsLoadingPrize] = useState(false);
+  const [hasAutoOpenedPrize, setHasAutoOpenedPrize] = useState(false);
 
   const hasBlessNumbers = data.blessNumbers && data.blessNumbers.length > 0;
+
+  // Log para debug
+  useEffect(() => {
+    if (open) {
+      console.log('PurchaseSuccessView abierto');
+      console.log('Bless numbers en data:', data.blessNumbers);
+      console.log('Has bless numbers:', hasBlessNumbers);
+      console.log('Data completo:', data);
+    }
+  }, [open, data.blessNumbers, hasBlessNumbers]);
 
   // Efecto de confetti cuando hay números bendecidos
   useEffect(() => {
@@ -163,6 +174,45 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       return () => clearInterval(interval);
     }
   }, [open, hasBlessNumbers]);
+
+  // Abrir automáticamente el modal de premio cuando hay números bendecidos
+  useEffect(() => {
+    if (open && hasBlessNumbers && data.blessNumbers && data.blessNumbers.length > 0 && !hasAutoOpenedPrize && !selectedPrize && !isLoadingPrize) {
+      // Esperar un poco para que el usuario vea el confetti antes de abrir el modal
+      const timer = setTimeout(async () => {
+        const firstBlessNumber = data.blessNumbers![0];
+        setIsLoadingPrize(true);
+        try {
+          const prize = await prizesService.getPrizeByRaffleIdAndTicketId(
+            data.raffle.id,
+            firstBlessNumber,
+            data.buyer.id
+          );
+          if (prize) {
+            setSelectedPrize(prize);
+            setHasAutoOpenedPrize(true);
+          } else {
+            console.warn('No se encontró premio para el bless number:', firstBlessNumber);
+            setHasAutoOpenedPrize(true); // Marcar como intentado para no volver a intentar
+          }
+        } catch (error) {
+          console.error('Error al obtener premio bless:', error);
+          setHasAutoOpenedPrize(true); // Marcar como intentado para no volver a intentar
+        } finally {
+          setIsLoadingPrize(false);
+        }
+      }, 2000); // Esperar 2 segundos para que el usuario vea el confetti
+
+      return () => clearTimeout(timer);
+    }
+  }, [open, hasBlessNumbers, data.blessNumbers, data.raffle.id, data.buyer.id, selectedPrize, isLoadingPrize, hasAutoOpenedPrize]);
+
+  // Resetear el flag cuando se cierra el modal de éxito
+  useEffect(() => {
+    if (!open) {
+      setHasAutoOpenedPrize(false);
+    }
+  }, [open]);
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('es-VE', {

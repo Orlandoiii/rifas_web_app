@@ -81,6 +81,14 @@ export interface TransactionStatusResponse {
   rsn: string;
   reject_code?: string;  // Código de rechazo (ej: "AB01", "MD09", etc.)
   bless_numbers?: number[];
+  // Campos alternativos que pueden venir del backend
+  blessed_numbers?: number[];
+  transactionId?: string;
+  bookingId?: string;
+  refIbp?: string;
+  rejectCode?: string;
+  blessNumbers?: number[];
+  blessedNumbers?: number[];
 }
 
 export async function requestDebitOtp(payload: RequestOtpPayload): Promise<void> {
@@ -218,7 +226,25 @@ export async function getTransactionStatus(
     throw new Error(errorMessage || `Error al procesar la solicitud. Código: ${response.status}`);
   }
   
-  return data;
+  // Mapear la respuesta para asegurar que bless_numbers esté presente
+  // El backend puede retornar 'bless_numbers' o 'blessed_numbers'
+  const mappedData: TransactionStatusResponse = {
+    transaction_id: data.transaction_id || data.transactionId,
+    booking_id: data.booking_id || data.bookingId,
+    ref_ibp: data.ref_ibp || data.refIbp,
+    status: data.status,
+    rsn: data.rsn || data.reason || '',
+    reject_code: data.reject_code || data.rejectCode,
+    // Manejar ambos formatos posibles
+    bless_numbers: data.bless_numbers || data.blessed_numbers || data.blessNumbers || data.blessedNumbers,
+  };
+  
+  // Log para debug
+  if (mappedData.bless_numbers && mappedData.bless_numbers.length > 0) {
+    console.log('Bless numbers encontrados:', mappedData.bless_numbers);
+  }
+  
+  return mappedData;
 }
 
 /**

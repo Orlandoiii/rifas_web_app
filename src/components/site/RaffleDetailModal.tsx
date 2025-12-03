@@ -259,6 +259,14 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         // 3. Manejar el resultado final
         if (result.finalStatus === 'ACCP') {
             // Pago aceptado - preparar datos para la vista de éxito
+            // Manejar ambos formatos posibles del backend
+            const blessNumbers = result.bless_numbers || result.blessed_numbers || result.blessNumbers || result.blessedNumbers || [];
+            
+            // Log para debug
+            console.log('Pago exitoso. Referencia:', result.ref_ibp);
+            console.log('Bless numbers recibidos:', blessNumbers);
+            console.log('Result completo:', result);
+            
             const successData: PurchaseSuccessData = {
                 transactionId: result.transaction_id,
                 refIbp: result.ref_ibp,
@@ -271,12 +279,10 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     id: checkout.buyer.id,
                 },
                 tickets: selected,
-                blessNumbers: result.bless_numbers, // Agregar bless numbers si vienen del backend
+                blessNumbers: blessNumbers, // Agregar bless numbers si vienen del backend
                 amount: amount,
                 currency: detail.currency || 'USD',
             };
-
-            console.log('Pago exitoso. Referencia:', result.ref_ibp);
 
             // Guardar la compra en localStorage
             savePurchase(successData);
