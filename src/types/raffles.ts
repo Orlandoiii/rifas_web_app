@@ -33,6 +33,7 @@ export interface RaffleTicket {
 export interface RaffleParticipant {
   participantId?: RaffleId;  // Opcional: se incluye si ya existe
   raffleId: RaffleId;
+  id: string;  // Cédula de identidad
   name: string;
   email: string;
   phone: string;

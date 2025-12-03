@@ -5,6 +5,7 @@ import { Stepper } from '../lib/components/stepper';
 import type { Step } from '../lib/components/stepper';
 import TicketSelectionForm from './TicketSelectionForm';
 import UserDataForm from './UserDataForm';
+import TermsAndConditions from './TermsAndConditions';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
 import OTPVerification from './payments/OTPVerification';
 import PurchaseSuccessView, { type PurchaseSuccessData } from './PurchaseSuccessView';
@@ -56,11 +57,13 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
 
     type CheckoutData = {
         buyer: { id: string; name: string; phone: string; email: string };
+        acceptedTerms: boolean;
         payment: SypagoDebitPayload;
     };
 
     const [checkout, setCheckout] = React.useState<CheckoutData>({
         buyer: { id: '', name: '', phone: '', email: '' },
+        acceptedTerms: false,
         payment: {
             bankCode: '',
             phone: '',
@@ -92,6 +95,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
 
         const requestData = {
             raffleId: raffle.id,
+            id: checkout.buyer.id,
             name: checkout.buyer.name,
             email: checkout.buyer.email,
             phone: checkout.buyer.phone,
@@ -372,6 +376,22 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     disabled={isProcessing}
                     onClearData={handleClearUserData}
                     hasStoredData={!!participant}
+                    onSubmitAttempt={onSubmitAttempt}
+                />
+            )
+        },
+        {
+            id: 'terms',
+            title: 'Términos y Condiciones',
+            validate: (d) => {
+                // Validar que se hayan aceptado los términos
+                return d.acceptedTerms === true;
+            },
+            render: ({ data, setData, isProcessing, onSubmitAttempt }) => (
+                <TermsAndConditions
+                    accepted={data.acceptedTerms}
+                    onChange={(accepted) => setData(prev => ({ ...prev, acceptedTerms: accepted }))}
+                    disabled={isProcessing}
                     onSubmitAttempt={onSubmitAttempt}
                 />
             )
