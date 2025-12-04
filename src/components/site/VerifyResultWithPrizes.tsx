@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { RaffleVerifyTicket } from '../../types/raffles';
@@ -24,6 +24,13 @@ export default function VerifyResultWithPrizes({
   );
 
   const hasWinningTickets = winningTickets.length > 0;
+  
+  // Crear una key única basada en los tickets para forzar remount cuando cambian
+  const ticketsKey = useMemo(() => 
+    allTickets.map(t => t.ticketNumber).join(',') + '-' + 
+    winningTickets.map(t => t.ticketNumber).join(','),
+    [allTickets, winningTickets]
+  );
 
   // Efecto de confetti cuando hay tickets ganadores
   useEffect(() => {
@@ -67,7 +74,7 @@ export default function VerifyResultWithPrizes({
   }, [hasWinningTickets]);
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
+    <div key={ticketsKey} className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Header de felicitación cuando hay ganadores */}
       {hasWinningTickets && (
         <motion.div
@@ -161,10 +168,13 @@ export default function VerifyResultWithPrizes({
 
         {/* Main Prize - Destacado */}
         {mainPrizeTickets.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
+          <div
+            key={`main-section-${ticketsKey}`}
+            style={{ 
+              // Asegurar que siempre sea visible
+              visibility: 'visible',
+              opacity: 1
+            }}
             className="mb-4 sm:mb-6"
           >
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
@@ -186,42 +196,82 @@ export default function VerifyResultWithPrizes({
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              {mainPrizeTickets.map((ticket, index) => (
-                <motion.button
-                  key={ticket.ticketNumber}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.8 + index * 0.1, type: 'spring', stiffness: 200 }}
-                  whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => onTicketClick(ticket)}
-                  className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-linear-to-br from-binance-main to-binance-dark border-2 border-binance-main rounded-lg text-sm sm:text-base md:text-lg lg:text-xl font-bold text-white shadow-lg hover:shadow-2xl transition-all cursor-pointer shrink-0 relative overflow-hidden"
-                >
-                  <motion.div
-                    animate={{
-                      opacity: [0.3, 0.6, 0.3],
-                      scale: [1, 1.2, 1]
+              {mainPrizeTickets.map((ticket, index) => {
+                const isAlsoBless = ticket.isBlessNumber && ticket.isMainPrize;
+                return (
+                  <motion.button
+                    key={`main-${ticket.ticketNumber}-${ticketsKey}`}
+                    initial={false}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0], opacity: 1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => onTicketClick(ticket)}
+                    style={{ 
+                      // Asegurar que siempre sea visible, incluso si la animación falla
+                      minWidth: '3rem',
+                      minHeight: '3rem',
+                      opacity: 1, // Forzar opacidad completa siempre
+                      visibility: 'visible'
                     }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                    className="absolute inset-0 bg-white/20 rounded-lg"
-                  />
-                  <span className="relative z-10">{ticket.ticketNumber}</span>
-                </motion.button>
-              ))}
+                    className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-lg text-sm sm:text-base md:text-lg lg:text-xl font-bold text-white shadow-lg hover:shadow-2xl transition-all cursor-pointer shrink-0 relative overflow-hidden ${
+                      isAlsoBless 
+                        ? 'bg-linear-to-br from-mint-main via-binance-main to-binance-dark border-2 border-mint-main' 
+                        : 'bg-linear-to-br from-binance-main to-binance-dark border-2 border-binance-main'
+                    }`}
+                  >
+                    <motion.div
+                      animate={{
+                        opacity: [0.3, 0.6, 0.3],
+                        scale: [1, 1.2, 1]
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                      className="absolute inset-0 bg-white/20 rounded-lg"
+                    />
+                    <span className="relative z-10">{ticket.ticketNumber}</span>
+                    {/* Badge indicando que también es bendecido */}
+                    {isAlsoBless && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.9 + index * 0.1, type: 'spring' }}
+                        className="absolute -top-1 -right-1 bg-mint-main border-2 border-white rounded-full p-0.5 sm:p-1 shadow-lg"
+                        title="También es premio bendecido"
+                      >
+                        <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                      </motion.div>
+                    )}
+                  </motion.button>
+                );
+              })}
             </div>
-          </motion.div>
+            {/* Mensaje informativo si hay tickets que son ambos */}
+            {mainPrizeTickets.some(t => t.isBlessNumber && t.isMainPrize) && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.1 }}
+                className="text-xs sm:text-sm text-mint-main mt-2 flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3 h-3 shrink-0" />
+                <span>Algunos números también son premios bendecidos</span>
+              </motion.p>
+            )}
+          </div>
         )}
 
         {/* Bless Numbers */}
         {blessTickets.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
+          <div
+            key={`bless-section-${ticketsKey}`}
+            style={{ 
+              // Asegurar que siempre sea visible
+              visibility: 'visible',
+              opacity: 1
+            }}
           >
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-mint-main shrink-0" />
@@ -232,20 +282,26 @@ export default function VerifyResultWithPrizes({
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {blessTickets.map((ticket, index) => (
                 <motion.button
-                  key={ticket.ticketNumber}
-                  initial={{ opacity: 0, scale: 0 }}
+                  key={`bless-${ticket.ticketNumber}-${ticketsKey}`}
+                  initial={false}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1.0 + index * 0.1, type: 'spring', stiffness: 200 }}
-                  whileHover={{ scale: 1.1 }}
+                  whileHover={{ scale: 1.1, opacity: 1 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onTicketClick(ticket)}
+                  style={{ 
+                    // Asegurar que siempre sea visible, incluso si la animación falla
+                    minWidth: '2.75rem',
+                    minHeight: '2.75rem',
+                    opacity: 1, // Forzar opacidad completa siempre
+                    visibility: 'visible'
+                  }}
                   className="inline-flex items-center justify-center w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-mint-main/20 border-2 border-mint-main rounded-lg text-xs sm:text-sm md:text-base lg:text-lg font-bold text-mint-main hover:bg-mint-main/30 transition-all cursor-pointer shrink-0 shadow-md hover:shadow-lg"
                 >
                   {ticket.ticketNumber}
                 </motion.button>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Tickets regulares (sin premio) */}

@@ -189,6 +189,7 @@ export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }:
               </div>
             </div>
             <VerifyResultWithPrizes
+              key={`verify-${result.tickets.map(t => t.ticketNumber).join(',')}-${result.winningTickets.map(t => t.ticketNumber).join(',')}`}
               allTickets={result.tickets}
               winningTickets={result.winningTickets}
               onTicketClick={handleTicketClick}
