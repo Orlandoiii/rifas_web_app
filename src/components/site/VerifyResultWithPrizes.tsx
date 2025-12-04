@@ -18,7 +18,8 @@ export default function VerifyResultWithPrizes({
   // Separar main prize de bless numbers
   // Los tickets que son mainPrize se muestran primero (incluso si también son bless)
   const mainPrizeTickets = winningTickets.filter(t => t.isMainPrize);
-  const blessTickets = winningTickets.filter(t => t.isBlessNumber && !t.isMainPrize);
+  // Incluir todos los tickets bendecidos, incluso los que también son premio principal
+  const blessTickets = winningTickets.filter(t => t.isBlessNumber);
   const regularTickets = allTickets.filter(
     t => !t.isMainPrize && !t.isBlessNumber
   );
