@@ -1,19 +1,26 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Package } from 'lucide-react';
+import { ShoppingBag, Package, Trash2 } from 'lucide-react';
 import NavBar from '../components/site/NavBar';
 import Footer from '../components/site/Footer';
 import PurchaseCard from '../components/site/PurchaseCard';
 import PurchaseSuccessView, { type PurchaseSuccessData } from '../components/site/PurchaseSuccessView';
 import VerifyRaffleForm from '../components/site/VerifyRaffleForm';
 import Modal from '../components/lib/components/modal/core/Modal';
+import { Button } from '../components/lib/components/button';
 import { usePurchases } from '../hooks';
 import { Loader } from '../components/lib/components/loader';
 
 export default function MyPurchases() {
-  const { purchases, isLoading } = usePurchases();
+  const { purchases, isLoading, clearPurchases } = usePurchases();
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseSuccessData | null>(null);
   const [verifyingPurchase, setVerifyingPurchase] = useState<PurchaseSuccessData | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  const handleClearPurchases = () => {
+    clearPurchases();
+    setShowClearConfirm(false);
+  };
 
   if (isLoading) {
     return (
@@ -34,18 +41,30 @@ export default function MyPurchases() {
       <main className="flex-1 mx-auto max-w-7xl w-full px-4 py-8 sm:py-12">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 bg-mint-main/10 rounded-xl">
-              <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 text-mint-main" />
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="p-3 bg-mint-main/10 rounded-xl">
+                <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 text-mint-main" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary">
+                  Mis Compras
+                </h1>
+                <p className="text-sm sm:text-base text-text-secondary mt-1">
+                  Historial de tus participaciones en rifas
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary">
-                Mis Compras
-              </h1>
-              <p className="text-sm sm:text-base text-text-secondary mt-1">
-                Historial de tus participaciones en rifas
-              </p>
-            </div>
+            {purchases.length > 0 && (
+              <Button
+                variant="secondary"
+                onClick={() => setShowClearConfirm(true)}
+                className="flex items-center gap-2 shrink-0"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Limpiar</span>
+              </Button>
+            )}
           </div>
           
           {/* Stats */}
@@ -87,11 +106,10 @@ export default function MyPurchases() {
             <p className="text-sm sm:text-base text-text-secondary text-center max-w-md mb-6">
               Cuando realices tu primera compra, aparecerá aquí para que puedas consultarla en cualquier momento.
             </p>
-            <Link
-              to="/"
-              className="px-6 py-3 bg-binance-main hover:bg-binance-dark text-white font-semibold rounded-lg transition-colors"
-            >
-              Ver Rifas Disponibles
+            <Link to="/">
+              <Button size="lg">
+                Ver Rifas Disponibles
+              </Button>
             </Link>
           </div>
         ) : (
@@ -138,6 +156,36 @@ export default function MyPurchases() {
           </div>
         </Modal>
       )}
+
+      {/* Modal de confirmación para limpiar */}
+      <Modal
+        open={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        size="md"
+        title="Limpiar compras"
+        lockBodyScroll
+      >
+        <div className="space-y-4">
+          <p className="text-text-primary">
+            ¿Estás seguro de que deseas eliminar todas tus compras? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex items-center justify-end gap-3 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setShowClearConfirm(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleClearPurchases}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar todo
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

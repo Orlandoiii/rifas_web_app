@@ -141,10 +141,12 @@ export function usePurchases() {
     return purchases.find(p => p.transactionId === transactionId) || null;
   }, [purchases]);
 
-  // Limpiar todas las compras (útil para testing)
+  // Limpiar todas las compras
   const clearPurchases = useCallback(() => {
     setPurchases([]);
     localStorage.removeItem(LOCAL_STORAGE_KEY);
+    // Disparar evento personalizado para notificar a otros componentes
+    window.dispatchEvent(new Event(STORAGE_EVENT));
   }, []);
 
   // Verificar si hay compras
