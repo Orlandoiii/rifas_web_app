@@ -1,4 +1,4 @@
-import { Trophy, Calendar, DollarSign } from 'lucide-react';
+import { Trophy, Calendar, Tag } from 'lucide-react';
 import type { RaffleSummary } from '../../types/raffles';
 import { useCountdown } from './Hero';
 import { isRaffleFinished } from '../../utils/raffles';
@@ -49,7 +49,7 @@ export default function VerifyRaffleDetails({ raffle }: VerifyRaffleDetailsProps
         <div className={`grid gap-4 ${ACTIVATE_RAFFLE_TIME_COUNTER ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'}`}>
           <div className="bg-bg-tertiary rounded-xl p-4 border border-border-light">
             <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="w-5 h-5 text-mint-main" />
+              <Tag className="w-5 h-5 text-mint-main" />
               <span className="text-xs text-text-muted">Precio</span>
             </div>
             <p className="text-lg font-bold text-text-primary">
