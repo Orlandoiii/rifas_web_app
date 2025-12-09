@@ -16,10 +16,10 @@ export interface PurchaseSuccessData {
   transactionId: string;
   refIbp: string;
   bookingId: string;
-  
+
   // Datos de la rifa
   raffle: RaffleSummary;
-  
+
   // Datos del comprador
   buyer: {
     name: string;
@@ -27,13 +27,13 @@ export interface PurchaseSuccessData {
     phone: string;
     id: string;
   };
-  
+
   // Tickets comprados
   tickets: number[];
-  
+
   // Bless numbers ganadores (opcional)
   blessNumbers?: number[];
-  
+
   // Monto pagado
   amount: number;
   currency: string;
@@ -56,7 +56,7 @@ function CopyButton({ value, label }: CopyButtonProps) {
   const handleCopy = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     try {
       // Intentar con la API moderna del clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -73,7 +73,7 @@ function CopyButton({ value, label }: CopyButtonProps) {
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        
+
         try {
           document.execCommand('copy');
           setCopied(true);
@@ -81,7 +81,7 @@ function CopyButton({ value, label }: CopyButtonProps) {
         } catch (err) {
           console.error('Fallback: Error al copiar', err);
         }
-        
+
         document.body.removeChild(textArea);
       }
     } catch (error) {
@@ -145,7 +145,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         return Math.random() * (max - min) + min;
       }
 
-      const interval = setInterval(function() {
+      const interval = setInterval(function () {
         const timeLeft = animationEnd - Date.now();
 
         if (timeLeft <= 0) {
@@ -270,7 +270,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       const logoX = 25;
       const logoY = 25;
       const leafSize = 4;
-      
+
       pdf.setFillColor(27, 160, 136); // Verde menta
       // Hoja superior
       pdf.circle(logoX, logoY - leafSize, leafSize, 'F');
@@ -308,7 +308,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       pdf.setFont('helvetica', 'bold');
       pdf.text('COMPROBANTE DE COMPRA', pageWidth / 2, yPos, { align: 'center' });
       yPos += 6;
-      
+
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(100, 100, 100);
@@ -332,20 +332,20 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       pdf.setTextColor(0, 0, 0);
       pdf.text(data.raffle.title, col1X, yPos, { maxWidth: colWidth });
       yPos += 5;
-      
+
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(80, 80, 80);
       const descLines = pdf.splitTextToSize(data.raffle.shortDescription, colWidth);
       pdf.text(descLines, col1X, yPos);
-      
+
       // COLUMNA 2: Monto
       const col2YStart = 66;
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(27, 160, 136);
       pdf.text('MONTO PAGADO', col2X, col2YStart);
-      
+
       pdf.setFontSize(20);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(27, 160, 136);
@@ -377,7 +377,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         pdf.setTextColor(120, 120, 120);
         pdf.setFont('helvetica', 'normal');
         pdf.text(item.label + ':', margin, yPos);
-        
+
         pdf.setFontSize(9);
         pdf.setTextColor(0, 0, 0);
         pdf.setFont('helvetica', 'bold');
@@ -403,7 +403,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(240, 185, 11);
-      
+
       const ticketsText = data.tickets.join('  •  ');
       const ticketLines = pdf.splitTextToSize(ticketsText, contentWidth);
       pdf.text(ticketLines, margin, yPos);
@@ -425,14 +425,14 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         pdf.setFontSize(11);
         pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(27, 160, 136); // Verde menta
-        pdf.text('NÚMEROS BENDITOS GANADORES', margin, yPos);
+        pdf.text('NÚMEROS BENDECIDOS GANADORES', margin, yPos);
         yPos += 6;
 
         // Dibujar números bless
         pdf.setFontSize(16);
         pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(27, 160, 136); // Verde menta
-        
+
         const blessText = data.blessNumbers.join('  •  ');
         const blessLines = pdf.splitTextToSize(blessText, contentWidth);
         pdf.text(blessLines, margin, yPos);
@@ -468,7 +468,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         pdf.setTextColor(120, 120, 120);
         pdf.setFont('helvetica', 'normal');
         pdf.text(ref.label + ':', margin, yPos);
-        
+
         pdf.setFontSize(8);
         pdf.setTextColor(0, 0, 0);
         pdf.setFont('helvetica', 'bold');
@@ -507,7 +507,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
       pdf.setDrawColor(200, 200, 200);
       pdf.setLineWidth(0.3);
       pdf.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-      
+
       pdf.setFontSize(7);
       pdf.setTextColor(150, 150, 150);
       pdf.text('TuSorteoGanador © 2025', pageWidth / 2, pageHeight - 8, { align: 'center' });
@@ -529,197 +529,196 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
 
   return (
     <>
-    <Modal 
-      open={open} 
-      onClose={onClose} 
-      size="xl" 
-      title={hasBlessNumbers ? "¡Compra Exitosa! ¡Felicidades! Usted ya es un ganador." : "¡Compra Exitosa!"}
-      lockBodyScroll
-      closeOnBackdropClick={false}
-    >
-      {/* Contenido del modal */}
-      <div className="space-y-6 overflow-x-hidden">
-        {/* Header con ícono de éxito y fecha */}
-        <div className="text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-            className={`w-20 h-20 mx-auto mb-4 ${hasBlessNumbers ? 'bg-linear-to-br from-binance-light via-binance-main to-binance-dark' : 'bg-state-success'} rounded-full flex items-center justify-center shadow-lg`}
-          >
-            {hasBlessNumbers ? (
-              <Trophy className="w-12 h-12 text-white" strokeWidth={1.5} />
-            ) : (
-              <Check className="w-12 h-12 text-white" />
-            )}
-          </motion.div>
-          <p className="text-sm text-text-muted">
-            {hasBlessNumbers ? `¡Felicidades! ${formatDate()}` : formatDate()}
-          </p>
-        </div>
-
-        {/* Contenido del ticket */}
-        {/* Información de la rifa */}
-        <div>
-          <h3 className="text-lg font-semibold text-text-primary mb-3">
-            Detalles de la Rifa
-          </h3>
-          <div className="bg-bg-secondary rounded-xl p-4 border border-border-light">
-            <h4 className="font-bold text-xl text-text-primary mb-2">
-              {data.raffle.title}
-            </h4>
-            <p className="text-sm text-text-secondary">
-              {data.raffle.shortDescription}
+      <Modal
+        open={open}
+        onClose={onClose}
+        size="xl"
+        title={hasBlessNumbers ? "Felicidades, usted ya es un ganador de un número bendecido!" : "¡Compra Exitosa!"}
+        lockBodyScroll
+        closeOnBackdropClick={false}
+      >
+        {/* Contenido del modal */}
+        <div className="space-y-6 overflow-x-hidden">
+          {/* Header con ícono de éxito y fecha */}
+          <div className="text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+              className={`w-20 h-20 mx-auto mb-4 ${hasBlessNumbers ? 'bg-linear-to-br from-binance-light via-binance-main to-binance-dark' : 'bg-state-success'} rounded-full flex items-center justify-center shadow-lg`}
+            >
+              {hasBlessNumbers ? (
+                <Trophy className="w-12 h-12 text-white" strokeWidth={1.5} />
+              ) : (
+                <Check className="w-12 h-12 text-white" />
+              )}
+            </motion.div>
+            <p className="text-sm text-text-muted">
+              {hasBlessNumbers ? `¡Felicidades! ${formatDate()}` : formatDate()}
             </p>
           </div>
-        </div>
 
-        {/* Bless Numbers ganadores - Reubicado antes de datos del participante */}
-        {hasBlessNumbers && (
+          {/* Contenido del ticket */}
+          {/* Información de la rifa */}
           <div>
             <h3 className="text-lg font-semibold text-text-primary mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-mint-main" />
-                <span>¡Números Benditos Ganadores!</span>
-              </div>
+              Detalles de la Rifa
             </h3>
-            <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
-              <p className="text-xs sm:text-sm text-text-secondary mb-3 text-center flex items-center justify-center gap-2">
-                <Trophy className="w-4 h-4 text-mint-main" />
-                Haz click en un número para ver los detalles del premio
+            <div className="bg-bg-secondary rounded-xl p-4 border border-border-light">
+              <h4 className="font-bold text-xl text-text-primary mb-2">
+                {data.raffle.title}
+              </h4>
+              <p className="text-sm text-text-secondary">
+                {data.raffle.shortDescription}
               </p>
+            </div>
+          </div>
+
+          {/* Bless Numbers ganadores - Reubicado antes de datos del participante */}
+          {hasBlessNumbers && (
+            <div>
+              <h3 className="text-lg font-semibold text-text-primary mb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-mint-main" />
+                  <span>¡Números Bendecidos Ganadores!</span>
+                </div>
+              </h3>
+              <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
+                <p className="text-xs sm:text-sm text-text-secondary mb-3 text-center flex items-center justify-center gap-2">
+                  <Trophy className="w-4 h-4 text-mint-main" />
+                </p>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
+                  {data?.blessNumbers?.map((blessNumber: number, index: number) => (
+                    <motion.button
+                      key={blessNumber}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 + index * 0.05 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleBlessNumberClick(blessNumber)}
+                      disabled={isLoadingPrize}
+                      className="w-12 h-12 sm:w-16 sm:h-16 bg-mint-main/20 border-2 border-mint-main rounded-lg flex items-center justify-center shadow-lg hover:bg-mint-main/30 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="text-lg sm:text-2xl font-bold text-mint-main">
+                        {blessNumber}
+                      </span>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Datos del comprador */}
+          <div>
+            <h3 className="text-lg font-semibold text-text-primary mb-3">
+              Datos del Participante
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
+                <p className="text-xs text-text-muted mb-1 font-medium">Nombre</p>
+                <p className="text-sm font-semibold text-text-primary">
+                  {data.buyer.name}
+                </p>
+              </div>
+              <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
+                <p className="text-xs text-text-muted mb-1 font-medium">Cédula</p>
+                <p className="text-sm font-semibold text-text-primary">
+                  {data.buyer.id}
+                </p>
+              </div>
+              <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
+                <p className="text-xs text-text-muted mb-1 font-medium">Email</p>
+                <p className="text-sm font-semibold text-text-primary truncate">
+                  {data.buyer.email}
+                </p>
+              </div>
+              <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
+                <p className="text-xs text-text-muted mb-1 font-medium">Teléfono</p>
+                <p className="text-sm font-semibold text-text-primary">
+                  {data.buyer.phone}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tickets comprados */}
+          <div>
+            <h3 className="text-lg font-semibold text-text-primary mb-3">
+              Tus Números de la Suerte
+            </h3>
+            <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-binance-main">
               <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
-                {data?.blessNumbers?.map((blessNumber: number, index: number) => (
-                  <motion.button
-                    key={blessNumber}
+                {data.tickets.map((ticket, index) => (
+                  <motion.div
+                    key={ticket}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.1 + index * 0.05 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleBlessNumberClick(blessNumber)}
-                    disabled={isLoadingPrize}
-                    className="w-12 h-12 sm:w-16 sm:h-16 bg-mint-main/20 border-2 border-mint-main rounded-lg flex items-center justify-center shadow-lg hover:bg-mint-main/30 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-12 h-12 sm:w-16 sm:h-16 bg-binance-main rounded-lg flex items-center justify-center shadow-lg border-2 border-binance-dark"
                   >
-                    <span className="text-lg sm:text-2xl font-bold text-mint-main">
-                      {blessNumber}
+                    <span className="text-lg sm:text-2xl font-bold text-white">
+                      {ticket}
                     </span>
-                  </motion.button>
+                  </motion.div>
                 ))}
+              </div>
+              <div className="mt-4 pt-4 border-t-2 border-border-light flex justify-between items-center">
+                <span className="text-sm font-semibold text-text-secondary">
+                  Total de tickets:
+                </span>
+                <span className="text-lg font-bold text-binance-main">
+                  {data.tickets.length}
+                </span>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Datos del comprador */}
-        <div>
-          <h3 className="text-lg font-semibold text-text-primary mb-3">
-            Datos del Participante
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
-              <p className="text-xs text-text-muted mb-1 font-medium">Nombre</p>
-              <p className="text-sm font-semibold text-text-primary">
-                {data.buyer.name}
-              </p>
-            </div>
-            <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
-              <p className="text-xs text-text-muted mb-1 font-medium">Cédula</p>
-              <p className="text-sm font-semibold text-text-primary">
-                {data.buyer.id}
-              </p>
-            </div>
-            <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
-              <p className="text-xs text-text-muted mb-1 font-medium">Email</p>
-              <p className="text-sm font-semibold text-text-primary truncate">
-                {data.buyer.email}
-              </p>
-            </div>
-            <div className="bg-bg-secondary rounded-lg p-3 border border-border-light">
-              <p className="text-xs text-text-muted mb-1 font-medium">Teléfono</p>
-              <p className="text-sm font-semibold text-text-primary">
-                {data.buyer.phone}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Tickets comprados */}
-        <div>
-          <h3 className="text-lg font-semibold text-text-primary mb-3">
-            Tus Números de la Suerte
-          </h3>
-          <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-binance-main">
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
-              {data.tickets.map((ticket, index) => (
-                <motion.div
-                  key={ticket}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  className="w-12 h-12 sm:w-16 sm:h-16 bg-binance-main rounded-lg flex items-center justify-center shadow-lg border-2 border-binance-dark"
-                >
-                  <span className="text-lg sm:text-2xl font-bold text-white">
-                    {ticket}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t-2 border-border-light flex justify-between items-center">
+          {/* Monto pagado */}
+          <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
               <span className="text-sm font-semibold text-text-secondary">
-                Total de tickets:
+                Monto Total Pagado:
               </span>
-              <span className="text-lg font-bold text-binance-main">
-                {data.tickets.length}
+              <span className="text-xl sm:text-2xl font-bold text-mint-main">
+                {formatCurrency(data.amount, data.currency)}
               </span>
             </div>
           </div>
-        </div>
 
-        {/* Monto pagado */}
-        <div className="bg-bg-tertiary rounded-xl p-3 sm:p-4 border-2 border-mint-main">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-            <span className="text-sm font-semibold text-text-secondary">
-              Monto Total Pagado:
-            </span>
-            <span className="text-xl sm:text-2xl font-bold text-mint-main">
-              {formatCurrency(data.amount, data.currency)}
-            </span>
+          {/* Referencias de transacción */}
+          <div>
+            <h3 className="text-lg font-semibold text-text-primary mb-3">
+              Referencias de Transacción
+            </h3>
+            <div className="space-y-3">
+              <CopyButton
+                label="ID de Transacción"
+                value={data.transactionId}
+              />
+              <CopyButton
+                label="Referencia IBP"
+                value={data.refIbp}
+              />
+              <CopyButton
+                label="Número de Reserva"
+                value={data.bookingId}
+              />
+            </div>
+          </div>
+
+          {/* Mensaje informativo */}
+          <div className="bg-bg-tertiary border-2 border-state-info rounded-lg p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-text-primary text-center font-medium">
+              <strong className="font-bold text-state-info">¡Importante!</strong> Guarda estas referencias para cualquier consulta futura.
+              Al cerrar esta ventana se descargará automáticamente un comprobante en PDF.
+            </p>
           </div>
         </div>
+        {/* Fin del contenido del modal */}
 
-        {/* Referencias de transacción */}
-        <div>
-          <h3 className="text-lg font-semibold text-text-primary mb-3">
-            Referencias de Transacción
-          </h3>
-          <div className="space-y-3">
-            <CopyButton
-              label="ID de Transacción"
-              value={data.transactionId}
-            />
-            <CopyButton
-              label="Referencia IBP"
-              value={data.refIbp}
-            />
-            <CopyButton
-              label="Número de Reserva"
-              value={data.bookingId}
-            />
-          </div>
-        </div>
-
-        {/* Mensaje informativo */}
-        <div className="bg-bg-tertiary border-2 border-state-info rounded-lg p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-text-primary text-center font-medium">
-            <strong className="font-bold text-state-info">¡Importante!</strong> Guarda estas referencias para cualquier consulta futura.
-            Al cerrar esta ventana se descargará automáticamente un comprobante en PDF.
-          </p>
-        </div>
-      </div>
-      {/* Fin del contenido del modal */}
-
-      {/* Botones de acción */}
+        {/* Botones de acción */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6">
           <Button
             onClick={generatePDF}
@@ -738,14 +737,14 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
             Entendido
           </Button>
         </div>
-    </Modal>
+      </Modal>
 
-    {/* Modal de premio bless */}
-    <PrizeWinnerModal
-      prize={selectedPrize}
-      open={!!selectedPrize}
-      onClose={() => setSelectedPrize(null)}
-    />
+      {/* Modal de premio bless */}
+      <PrizeWinnerModal
+        prize={selectedPrize}
+        open={!!selectedPrize}
+        onClose={() => setSelectedPrize(null)}
+      />
     </>
   );
 }

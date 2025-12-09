@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Trophy, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { RaffleVerifyTicket } from '../../types/raffles';
@@ -277,11 +277,11 @@ export default function VerifyResultWithPrizes({
             <div className="flex items-center gap-2 mb-2 sm:mb-3">
               <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-mint-main shrink-0" />
               <span className="text-xs sm:text-sm md:text-base font-bold text-mint-main wrap-break-word">
-                Premios Benditos
+                Premios Bendecidos
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              {blessTickets.map((ticket, index) => (
+              {blessTickets.map((ticket) => (
                 <motion.button
                   key={`bless-${ticket.ticketNumber}-${ticketsKey}`}
                   initial={false}

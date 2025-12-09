@@ -487,7 +487,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 onDataChange={(u) => setCheckout(u)}
                 finishLabel="Verificar"
                 onFinish={() => { /* El OTP se maneja en el componente */ }}
-                renderFooter={({ current, total, canNext, goBack, goNext, isProcessing }) => {
+                renderFooter={({ current, total, goBack, goNext, isProcessing }) => {
                     // En el último paso (OTP), solo mostrar botón Atrás
                     if (current === total - 1) {
                         return (
