@@ -419,6 +419,8 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     onChange={(payment) => setData(prev => ({ ...prev, payment }))}
                     disabled={isProcessing}
                     onSubmitAttempt={onSubmitAttempt}
+                    buyerId={data.buyer.id}
+                    buyerPhone={data.buyer.phone}
                 />
             ),
             validate: (d) => {

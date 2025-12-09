@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Input } from '../../lib/components/input';
 import { Select } from '../../lib/components/select';
+import { Button } from '../../lib/components/button';
 import { useBanks } from '../../../hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, X } from 'lucide-react';
@@ -21,6 +22,8 @@ interface SypagoDebitProps {
   onChange: (payload: SypagoDebitPayload) => void;
   disabled?: boolean;
   onSubmitAttempt?: (callback: () => void) => void;
+  buyerId?: string; // Cédula del buyer del UserDataForm
+  buyerPhone?: string; // Teléfono del buyer del UserDataForm
 }
 
 // Validaciones
@@ -62,7 +65,7 @@ function validateDocNumber(docNumber: string, docType: 'V' | 'E' | 'J' | 'P'): s
   return null;
 }
 
-export default function SypagoDebit({ raffleTitle, selectedNumbers, price, currency, payload, onChange, disabled = false, onSubmitAttempt }: SypagoDebitProps) {
+export default function SypagoDebit({ raffleTitle, selectedNumbers, price, currency, payload, onChange, disabled = false, onSubmitAttempt, buyerId, buyerPhone }: SypagoDebitProps) {
   const { data: banks = [], isLoading: loadingBanks, isError: errorBanks } = useBanks();
 
   const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
@@ -89,6 +92,43 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
   }>({});
 
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = React.useState(false);
+  const hasAutoFilledRef = React.useRef(false);
+
+  // Prellenar datos del buyer cuando están disponibles y el formulario está vacío
+  React.useEffect(() => {
+    if (buyerId || buyerPhone) {
+      const shouldAutoFill = 
+        (!payload.docNumber.trim() && buyerId) || 
+        (!payload.phone.trim() && buyerPhone);
+      
+      if (shouldAutoFill && !hasAutoFilledRef.current) {
+        onChange({
+          ...payload,
+          docNumber: buyerId && !payload.docNumber.trim() ? buyerId : payload.docNumber,
+          phone: buyerPhone && !payload.phone.trim() ? buyerPhone : payload.phone,
+        });
+        hasAutoFilledRef.current = true;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buyerId, buyerPhone]);
+
+  // Resetear hasAutoFilled cuando cambian los datos del buyer
+  React.useEffect(() => {
+    hasAutoFilledRef.current = false;
+  }, [buyerId, buyerPhone]);
+
+  const handleClearData = () => {
+    onChange({
+      ...payload,
+      docNumber: '',
+      phone: '',
+    });
+    hasAutoFilledRef.current = false;
+    setTouched(prev => ({ ...prev, docNumber: false, phone: false }));
+  };
+
+  const hasAutoFilledData = (buyerId && payload.docNumber === buyerId) || (buyerPhone && payload.phone === buyerPhone);
 
   // Registrar función de activación de validaciones con el stepper
   React.useEffect(() => {
@@ -157,6 +197,28 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
         {errorBanks && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">
             Error al cargar los bancos. Por favor, intenta nuevamente.
+          </div>
+        )}
+
+        {/* Botón limpiar datos prellenados */}
+        {hasAutoFilledData && (
+          <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm text-blue-700 dark:text-blue-300">
+                Datos prellenados desde el formulario anterior
+              </span>
+            </div>
+            <Button 
+              variant="secondary" 
+              onClick={handleClearData}
+              disabled={isFormDisabled}
+              className="text-sm"
+            >
+              Limpiar datos
+            </Button>
           </div>
         )}
 
