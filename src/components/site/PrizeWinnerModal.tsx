@@ -5,14 +5,17 @@ import confetti from 'canvas-confetti';
 import Modal from '../lib/components/modal/core/Modal';
 import { Button } from '../lib/components/button';
 import type { Prize } from '../../types/prizes';
+import type { RaffleSummary } from '../../types/raffles';
+import { isRaffleFinished } from '../../utils/raffles';
 
 interface PrizeWinnerModalProps {
   prize: Prize | null;
   open: boolean;
   onClose: () => void;
+  raffle?: RaffleSummary | null;
 }
 
-export default function PrizeWinnerModal({ prize, open, onClose }: PrizeWinnerModalProps) {
+export default function PrizeWinnerModal({ prize, open, onClose, raffle }: PrizeWinnerModalProps) {
   useEffect(() => {
     if (open && prize) {
       // Lanzar confeti cuando se abre el modal
@@ -176,12 +179,24 @@ export default function PrizeWinnerModal({ prize, open, onClose }: PrizeWinnerMo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
-            className="bg-mint-main/10 border border-mint-main rounded-lg p-4 mb-6"
+            className="space-y-3 mb-6"
           >
-            <p className="text-sm text-text-primary">
-              <strong className="text-mint-main">¡Importante!</strong> Nos pondremos en contacto contigo 
-              para coordinar la entrega de tu premio.
-            </p>
+            <div className="bg-mint-main/10 border border-mint-main rounded-lg p-4">
+              <p className="text-sm text-text-primary">
+                <strong className="text-mint-main">¡Importante!</strong> Nos pondremos en contacto contigo 
+                para coordinar la entrega de tu premio.
+              </p>
+            </div>
+            
+            {/* Mensaje si la rifa no ha finalizado */}
+            {raffle && !isRaffleFinished(raffle) && (
+              <div className="bg-binance-main/10 border border-binance-main rounded-lg p-4">
+                <p className="text-sm text-text-primary">
+                  <strong className="text-binance-main">¡Sigue participando!</strong> La rifa aún no ha finalizado, 
+                  por lo que sigues participando por el premio mayor.
+                </p>
+              </div>
+            )}
           </motion.div>
 
           {/* Botón de cerrar */}

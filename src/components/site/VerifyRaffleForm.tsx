@@ -193,6 +193,7 @@ export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }:
               allTickets={result.tickets}
               winningTickets={result.winningTickets}
               onTicketClick={handleTicketClick}
+              raffle={raffle}
             />
           </div>
         )}
@@ -223,6 +224,7 @@ export default function VerifyRaffleForm({ raffle, initialDocumentId, onClose }:
         prize={selectedPrize}
         open={!!selectedPrize}
         onClose={handleClosePrizeModal}
+        raffle={raffle}
       />
     </>
   );

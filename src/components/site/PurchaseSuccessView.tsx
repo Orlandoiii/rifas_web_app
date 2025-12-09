@@ -10,6 +10,7 @@ import PrizeWinnerModal from './PrizeWinnerModal';
 import { prizesService } from '../../services/prizes';
 import type { RaffleSummary } from '../../types/raffles';
 import type { Prize } from '../../types/prizes';
+import { isRaffleFinished } from '../../utils/raffles';
 
 export interface PurchaseSuccessData {
   // IDs de transacción
@@ -709,11 +710,23 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
           </div>
 
           {/* Mensaje informativo */}
-          <div className="bg-bg-tertiary border-2 border-state-info rounded-lg p-3 sm:p-4">
-            <p className="text-xs sm:text-sm text-text-primary text-center font-medium">
-              <strong className="font-bold text-state-info">¡Importante!</strong> Guarda estas referencias para cualquier consulta futura.
-              Al cerrar esta ventana se descargará automáticamente un comprobante en PDF.
-            </p>
+          <div className="space-y-3">
+            <div className="bg-bg-tertiary border-2 border-state-info rounded-lg p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-text-primary text-center font-medium">
+                <strong className="font-bold text-state-info">¡Importante!</strong> Guarda estas referencias para cualquier consulta futura.
+                Al cerrar esta ventana se descargará automáticamente un comprobante en PDF.
+              </p>
+            </div>
+            
+            {/* Mensaje si la rifa no ha finalizado */}
+            {!isRaffleFinished(data.raffle) && (
+              <div className="bg-binance-main/10 border-2 border-binance-main rounded-lg p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-text-primary text-center font-medium">
+                  <strong className="font-bold text-binance-main">¡Sigue participando!</strong> La rifa aún no ha finalizado, 
+                  por lo que sigues participando por el premio mayor.
+                </p>
+              </div>
+            )}
           </div>
         </div>
         {/* Fin del contenido del modal */}
@@ -744,6 +757,7 @@ export default function PurchaseSuccessView({ data, open, onClose }: PurchaseSuc
         prize={selectedPrize}
         open={!!selectedPrize}
         onClose={() => setSelectedPrize(null)}
+        raffle={data.raffle}
       />
     </>
   );

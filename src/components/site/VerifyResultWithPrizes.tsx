@@ -3,17 +3,21 @@ import { motion } from 'framer-motion';
 import { Trophy, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { RaffleVerifyTicket } from '../../types/raffles';
+import type { RaffleSummary } from '../../types/raffles';
+import { isRaffleFinished } from '../../utils/raffles';
 
 interface VerifyResultWithPrizesProps {
   allTickets: RaffleVerifyTicket[];
   winningTickets: RaffleVerifyTicket[];
   onTicketClick: (ticket: RaffleVerifyTicket) => void;
+  raffle?: RaffleSummary | null;
 }
 
 export default function VerifyResultWithPrizes({ 
   allTickets, 
   winningTickets, 
-  onTicketClick 
+  onTicketClick,
+  raffle
 }: VerifyResultWithPrizesProps) {
   // Separar main prize de bless numbers
   // Los tickets que son mainPrize se muestran primero (incluso si también son bless)
@@ -322,6 +326,23 @@ export default function VerifyResultWithPrizes({
               ))}
             </div>
           </div>
+        )}
+
+        {/* Mensaje si la rifa no ha finalizado */}
+        {raffle && !isRaffleFinished(raffle) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-border-light"
+          >
+            <div className="bg-binance-main/10 border-2 border-binance-main rounded-lg p-3 sm:p-4">
+              <p className="text-xs sm:text-sm text-text-primary text-center font-medium">
+                <strong className="font-bold text-binance-main">¡Sigue participando!</strong> La rifa aún no ha finalizado, 
+                por lo que sigues participando por el premio mayor.
+              </p>
+            </div>
+          </motion.div>
         )}
       </motion.div>
     </div>
