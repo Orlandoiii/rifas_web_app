@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://192.168.120.101:7877/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://tusorteoganador.com/api/v1';
 
 export const API_ENDPOINTS = {
   raffles: {
