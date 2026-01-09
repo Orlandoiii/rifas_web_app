@@ -15,13 +15,15 @@ interface UserDataFormProps {
   raffleTitle: string;
   price: number;
   currency: string;
-  selectedNumbers: number[];
   buyer: Buyer;
   onChange: (buyer: Buyer) => void;
   disabled?: boolean;
   onClearData?: () => void;
   hasStoredData?: boolean;
   onSubmitAttempt?: (callback: () => void) => void;
+  ticketQuantity: number;
+  onTicketQuantityChange: (quantity: number) => void;
+  availableTicketsCount: number;
 }
 
 // Validaciones
@@ -88,22 +90,25 @@ export default function UserDataForm({
   raffleTitle, 
   price, 
   currency,
-  selectedNumbers, 
   buyer, 
   onChange, 
   disabled = false,
   onClearData,
   hasStoredData = false,
-  onSubmitAttempt
+  onSubmitAttempt,
+  ticketQuantity,
+  onTicketQuantityChange,
+  availableTicketsCount
 }: UserDataFormProps) {
 
-  const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
+  const total = React.useMemo(() => (price || 0) * ticketQuantity, [price, ticketQuantity]);
   
   const [errors, setErrors] = React.useState<{
     id?: string | null;
     name?: string | null;
     phone?: string | null;
     email?: string | null;
+    ticketQuantity?: string | null;
   }>({});
   
   const [touched, setTouched] = React.useState<{
@@ -111,6 +116,7 @@ export default function UserDataForm({
     name?: boolean;
     phone?: boolean;
     email?: boolean;
+    ticketQuantity?: boolean;
   }>({});
 
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = React.useState(false);
@@ -124,22 +130,40 @@ export default function UserDataForm({
           id: true,
           name: true,
           phone: true,
-          email: true
+          email: true,
+          ticketQuantity: true
         });
         setHasAttemptedSubmit(true);
       });
     }
   }, [onSubmitAttempt]);
 
+  // Validar cantidad de tickets
+  function validateTicketQuantity(quantity: number): string | null {
+    if (!quantity || quantity <= 0) {
+      return 'La cantidad de boletos es requerida';
+    }
+    if (quantity > availableTicketsCount) {
+      return `Ha excedido la cantidad de boletos disponibles`;
+    }
+    if (quantity > 250) {
+      return 'No se pueden comprar más de 250 boletos a la vez';
+    }
+
+    return null;
+  }
+
   // Validar todos los campos
   const isValid = React.useMemo(() => {
-    return !errors.id && !errors.name && !errors.phone && !errors.email &&
-           buyer.id.trim() && buyer.name.trim() && buyer.phone.trim() && buyer.email.trim();
-  }, [errors, buyer]);
+    const quantityError = validateTicketQuantity(ticketQuantity);
+    return !errors.id && !errors.name && !errors.phone && !errors.email && !quantityError &&
+           buyer.id.trim() && buyer.name.trim() && buyer.phone.trim() && buyer.email.trim() &&
+           ticketQuantity > 0;
+  }, [errors, buyer, ticketQuantity, availableTicketsCount]);
 
   // Validar en tiempo real - solo mostrar errores si el campo fue touched O si ya se intentó hacer submit
   React.useEffect(() => {
-    const newErrors: typeof errors = {};
+    const newErrors: typeof errors & { ticketQuantity?: string | null } = {};
     
     if (touched.id || (hasAttemptedSubmit && buyer.id)) {
       newErrors.id = validateId(buyer.id);
@@ -153,9 +177,12 @@ export default function UserDataForm({
     if (touched.email || (hasAttemptedSubmit && buyer.email)) {
       newErrors.email = validateEmail(buyer.email);
     }
+    if (touched.ticketQuantity || (hasAttemptedSubmit && ticketQuantity)) {
+      newErrors.ticketQuantity = validateTicketQuantity(ticketQuantity);
+    }
     
     setErrors(newErrors);
-  }, [buyer, touched, hasAttemptedSubmit]);
+  }, [buyer, touched, hasAttemptedSubmit, ticketQuantity, availableTicketsCount]);
 
   const handleField = (key: keyof Buyer) => (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
@@ -193,22 +220,47 @@ export default function UserDataForm({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="text-text-primary font-semibold truncate">{raffleTitle}</div>
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="text-text-secondary">Tickets:
-              <span className="text-text-primary font-semibold">{selectedNumbers.length}</span>
+            <span className="text-text-secondary">Cantidad:
+              <span className="text-text-primary font-semibold">{ticketQuantity}</span>
             </span>
             <span className="text-text-secondary">Total:
               <span className="text-selected font-semibold">{total.toFixed(2)} {currency}</span>
             </span>
           </div>
         </div>
-        {selectedNumbers?.length ? (
-          <div className="mt-2 flex flex-wrap gap-2 max-h-24 overflow-auto">
-            {selectedNumbers.slice().sort((a, b) => a - b).map(n => (
-              <span key={n} className="text-xs px-2 py-1 rounded-md bg-bg-secondary 
-              border border-border-light text-text-primary">#{n}</span>
-            ))}
-          </div>
-        ) : null}
+        <p className="text-xs text-text-muted mt-2">
+          Los números de boletos se asignarán aleatoriamente al completar la compra
+        </p>
+      </div>
+
+      {/* Subtítulo explicativo */}
+      <div className="border-l-4 border-selected pl-4 py-2 bg-bg-secondary/50 rounded-r-lg">
+        <h3 className="text-base font-semibold text-text-primary mb-1">
+          Datos asociados a la rifa
+        </h3>
+        <p className="text-sm text-text-secondary">
+          Esta información será utilizada para asociar la compra a tu nombre y será necesaria para reclamar premios.
+        </p>
+      </div>
+
+      {/* Campo de cantidad de boletos */}
+      <div>
+        <Input
+          label="Cantidad de Boletos"
+          placeholder="Ej: 5"
+          value={ticketQuantity.toString()}
+          onChange={(e) => {
+            const value = e.target.value.replace(/\D/g, '');
+            const numValue = value === '' ? 0 : parseInt(value, 10);
+            onTicketQuantityChange(numValue);
+            setTouched(prev => ({ ...prev, ticketQuantity: true }));
+          }}
+          onBlur={() => setTouched(prev => ({ ...prev, ticketQuantity: true }))}
+          disabled={disabled}
+          type="number"
+          error={(touched.ticketQuantity || hasAttemptedSubmit) ? (errors as any).ticketQuantity : undefined}
+          hasSubmitted={touched.ticketQuantity || hasAttemptedSubmit}
+        />
       </div>
 
       {/* Botón limpiar datos guardados */}

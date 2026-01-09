@@ -3,7 +3,6 @@ import Modal from '../lib/components/modal/core/Modal';
 import { Button } from '../lib/components/button';
 import { Stepper } from '../lib/components/stepper';
 import type { Step } from '../lib/components/stepper';
-import TicketSelectionForm from './TicketSelectionForm';
 import UserDataForm from './UserDataForm';
 import TermsAndConditions from './TermsAndConditions';
 import SypagoDebit, { type SypagoDebitPayload } from './payments/SypagoDebit';
@@ -20,8 +19,7 @@ interface RaffleDetailModalProps {
 }
 
 export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetailModalProps) {
-    const { data: detail, isLoading: loadingTickets,
-        isError: errorTickets } = useRaffleDetail(open ? raffle : null);
+    const { data: detail } = useRaffleDetail(open ? raffle : null);
 
     const createParticipant = useCreateParticipant();
 
@@ -29,6 +27,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
     const { savePurchase } = usePurchases();
 
     const [selected, setSelected] = useState<number[]>([]);
+    const [ticketQuantity, setTicketQuantity] = useState<number>(1);
 
     const [otpCountdown, setOtpCountdown] = useState(0);
 
@@ -42,6 +41,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
     useEffect(() => {
         if (open) {
             setSelected([]);
+            setTicketQuantity(1);
             setOtpCountdown(0);
             setBookingId(null);
             // NO limpiar purchaseSuccess aquí - se limpia cuando se cierra la vista de éxito
@@ -89,17 +89,24 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
 
     // Función para reservar tickets cuando el usuario avanza del paso 2 al 3
     const handleReserveTickets = async (): Promise<void> => {
-        if (!raffle?.id || selected.length === 0) {
-            throw new Error('No hay tickets seleccionados para reservar');
+        if (!raffle?.id || !detail) {
+            throw new Error('No hay información de la rifa disponible');
         }
 
+        if (ticketQuantity <= 0) {
+            throw new Error('La cantidad de boletos debe ser mayor a 0');
+        }
+
+        // Enviar request con la cantidad de tickets solicitados
+        // El backend genera los números aleatoriamente
         const requestData = {
             raffleId: raffle.id,
             id: checkout.buyer.id,
             name: checkout.buyer.name,
             email: checkout.buyer.email,
             phone: checkout.buyer.phone,
-            ticketNumber: selected,
+            ticketNumber: [], // Array vacío, el backend genera los números
+            ticketQuantity: ticketQuantity, // Cantidad total de tickets solicitados
             ...(participant?.participantId && { participantId: participant.participantId }),
         };
 
@@ -107,15 +114,20 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
 
         // Verificar que se reservaron los tickets correctamente
         if (!response.reserveTickets || response.reserveTickets.length === 0) {
-            throw new Error('No se pudieron reservar los tickets seleccionados');
+            throw new Error('No se pudieron reservar los tickets');
         }
 
-        // Verificar que se reservaron TODOS los tickets solicitados
-        if (response.reserveTickets.length !== selected.length) {
+        // Validar que se reservó la cantidad que el usuario quería comprar
+        // No validamos que los números sean exactamente los enviados, solo la cantidad
+        if (response.reserveTickets.length !== ticketQuantity) {
             throw new Error(
-                `Solo se pudieron reservar ${response.reserveTickets.length} de ${selected.length} tickets. Por favor, intente nuevamente.`
+                `Solo se pudieron reservar ${response.reserveTickets.length} de ${ticketQuantity} tickets. Por favor, intente nuevamente.`
             );
         }
+
+        // Guardar los números reservados que vienen del backend
+        // El backend genera los números aleatoriamente
+        setSelected(response.reserveTickets);
 
         // Verificar que se recibió el bookingId
         if (!response.bookingId) {
@@ -167,7 +179,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         }
 
         // Calcular monto total
-        const amount = (detail.price || 0) * selected.length;
+        const amount = (detail.price || 0) * ticketQuantity;
 
         // Llamar al servicio para solicitar OTP
         await requestDebitOtp({
@@ -218,7 +230,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         }
 
         // Calcular monto total
-        const amount = (detail.price || 0) * selected.length;
+        const amount = (detail.price || 0) * ticketQuantity;
 
         // 1. Procesar el débito con el bookingId de la reserva
         // El bookingId se obtuvo al reservar los tickets y se mantiene durante todo el flujo
@@ -317,21 +329,13 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
         }
     };
 
+    // Calcular cantidad de boletos disponibles
+    const availableTicketsCount = React.useMemo(() => {
+        if (!detail?.tickets) return 0;
+        return detail.tickets.filter(t => t.status === 'available').length;
+    }, [detail]);
+
     const steps: Step<CheckoutData>[] = [
-        {
-            id: 'numbers',
-            title: 'Selecciona tus números',
-            validate: () => !loadingTickets && selected.length > 0,
-            render: () => (
-                <TicketSelectionForm
-                    detail={detail}
-                    loadingTickets={loadingTickets}
-                    errorTickets={errorTickets}
-                    selected={selected}
-                    onSelectedChange={setSelected}
-                />
-            )
-        },
         {
             id: 'userdata',
             title: 'Tus datos',
@@ -341,6 +345,11 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                 const name = d.buyer.name?.trim() || '';
                 const phone = d.buyer.phone?.trim() || '';
                 const email = d.buyer.email?.trim() || '';
+                
+                // Validar cantidad de boletos
+                if (ticketQuantity <= 0 || ticketQuantity > availableTicketsCount) {
+                    return false;
+                }
                 
                 // Cédula: solo números, 6-10 dígitos
                 if (!id || !/^\d+$/.test(id) || id.length < 6 || id.length > 10) {
@@ -376,13 +385,15 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     raffleTitle={detail?.title || ''}
                     price={detail?.price || 0}
                     currency={detail?.currency || 'USD'}
-                    selectedNumbers={selected}
                     buyer={data.buyer}
                     onChange={(buyer) => setData(prev => ({ ...prev, buyer }))}
                     disabled={isProcessing}
                     onClearData={handleClearUserData}
                     hasStoredData={!!participant}
                     onSubmitAttempt={onSubmitAttempt}
+                    ticketQuantity={ticketQuantity}
+                    onTicketQuantityChange={setTicketQuantity}
+                    availableTicketsCount={availableTicketsCount}
                 />
             )
         },
@@ -412,7 +423,6 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
             render: ({ data, setData, isProcessing, onSubmitAttempt }) => (
                 <SypagoDebit
                     raffleTitle={detail?.title || ''}
-                    selectedNumbers={selected}
                     price={detail?.price || 0}
                     currency={detail?.currency || 'USD'}
                     payload={data.payment}
@@ -421,6 +431,7 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
                     onSubmitAttempt={onSubmitAttempt}
                     buyerId={data.buyer.id}
                     buyerPhone={data.buyer.phone}
+                    ticketQuantity={ticketQuantity}
                 />
             ),
             validate: (d) => {
@@ -466,13 +477,13 @@ export default function RaffleDetailModal({ raffle, open, onClose }: RaffleDetai
             render: ({ isProcessing }) => (
                 <OTPVerification
                     raffleTitle={detail?.title || ''}
-                    selectedNumbers={selected}
                     price={detail?.price || 0}
                     currency={detail?.currency || 'USD'}
                     onVerify={handleVerifyOTP}
                     disabled={isProcessing}
                     countdown={otpCountdown}
                     onResend={handleResendOTP}
+                    ticketQuantity={ticketQuantity}
                 />
             )
         }

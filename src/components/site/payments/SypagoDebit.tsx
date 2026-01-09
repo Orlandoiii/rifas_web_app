@@ -15,7 +15,6 @@ export type SypagoDebitPayload = {
 
 interface SypagoDebitProps {
   raffleTitle: string;
-  selectedNumbers: number[];
   price: number;
   currency: string;
   payload: SypagoDebitPayload;
@@ -24,6 +23,7 @@ interface SypagoDebitProps {
   onSubmitAttempt?: (callback: () => void) => void;
   buyerId?: string; // Cédula del buyer del UserDataForm
   buyerPhone?: string; // Teléfono del buyer del UserDataForm
+  ticketQuantity: number;
 }
 
 // Validaciones
@@ -65,10 +65,10 @@ function validateDocNumber(docNumber: string, docType: 'V' | 'E' | 'J' | 'P'): s
   return null;
 }
 
-export default function SypagoDebit({ raffleTitle, selectedNumbers, price, currency, payload, onChange, disabled = false, onSubmitAttempt, buyerId, buyerPhone }: SypagoDebitProps) {
+export default function SypagoDebit({ raffleTitle, price, currency, payload, onChange, disabled = false, onSubmitAttempt, buyerId, buyerPhone, ticketQuantity }: SypagoDebitProps) {
   const { data: banks = [], isLoading: loadingBanks, isError: errorBanks } = useBanks();
 
-  const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
+  const total = React.useMemo(() => (price || 0) * ticketQuantity, [price, ticketQuantity]);
   const bankOptions = React.useMemo(() => banks.map(b => ({ value: b.code, label: `${b.code} - ${b.name}` })), [banks]);
   const docTypeOptions = React.useMemo(() => [
     { value: 'V', label: 'V - Venezolano' },
@@ -179,17 +179,23 @@ export default function SypagoDebit({ raffleTitle, selectedNumbers, price, curre
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="text-text-primary font-semibold truncate">{raffleTitle}</div>
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="text-text-secondary">Tickets: <span className="text-text-primary font-semibold">{selectedNumbers.length}</span></span>
+            <span className="text-text-secondary">Cantidad: <span className="text-text-primary font-semibold">{ticketQuantity}</span></span>
             <span className="text-text-secondary">Total: <span className="text-selected font-semibold">{total.toFixed(2)} {currency}</span></span>
           </div>
         </div>
-        {!!selectedNumbers.length && (
-          <div className="mt-2 flex flex-wrap gap-2 max-h-24 overflow-auto">
-            {selectedNumbers.slice().sort((a, b) => a - b).map(n => (
-              <span key={n} className="text-xs px-2 py-1 rounded-md bg-bg-secondary border border-border-light text-text-primary">#{n}</span>
-            ))}
-          </div>
-        )}
+        <p className="text-xs text-text-muted mt-2">
+          Los números de boletos se asignarán aleatoriamente al completar la compra
+        </p>
+      </div>
+
+      {/* Subtítulo explicativo */}
+      <div className="border-l-4 border-mint-main pl-4 py-2 bg-bg-secondary/50 rounded-r-lg">
+        <h3 className="text-base font-semibold text-text-primary mb-1">
+          Datos del pago únicamente
+        </h3>
+        <p className="text-sm text-text-secondary">
+          Esta información es solo para procesar el pago. Los datos con los que se reclama la compra y se asocian a la rifa son los del formulario anterior.
+        </p>
       </div>
 
       {/* Formulario Sypago Debit */}

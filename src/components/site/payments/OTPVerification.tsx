@@ -5,24 +5,24 @@ import { useSypagoRejectCodes } from '../../../hooks/usePayments';
 
 interface OTPVerificationProps {
   raffleTitle: string;
-  selectedNumbers: number[];
   price: number;
   currency: string;
   onVerify: (otp: string, onStatusUpdate?: (status: string) => void) => Promise<void>;
   disabled?: boolean;
   countdown?: number;
   onResend?: () => Promise<void>;
+  ticketQuantity: number;
 }
 
 export default function OTPVerification({
   raffleTitle,
-  selectedNumbers,
   price,
   currency,
   onVerify,
   disabled = false,
   countdown = 0,
-  onResend
+  onResend,
+  ticketQuantity
 }: OTPVerificationProps) {
   const [otp, setOtp] = React.useState<string[]>(Array(8).fill(''));
   const [isVerifying, setIsVerifying] = React.useState(false);
@@ -32,7 +32,7 @@ export default function OTPVerification({
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
   const { data: rejectCodes = [] } = useSypagoRejectCodes();
 
-  const total = React.useMemo(() => (price || 0) * (selectedNumbers?.length || 0), [price, selectedNumbers]);
+  const total = React.useMemo(() => (price || 0) * ticketQuantity, [price, ticketQuantity]);
 
   // Función para obtener la descripción de un código de rechazo
   const getRejectCodeDescription = React.useCallback((rejectCode: string): string | null => {
@@ -167,17 +167,13 @@ export default function OTPVerification({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="text-text-primary font-semibold truncate">{raffleTitle}</div>
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="text-text-secondary">Tickets: <span className="text-text-primary font-semibold">{selectedNumbers.length}</span></span>
+            <span className="text-text-secondary">Cantidad: <span className="text-text-primary font-semibold">{ticketQuantity}</span></span>
             <span className="text-text-secondary">Total: <span className="text-selected font-semibold">{total.toFixed(2)} {currency}</span></span>
           </div>
         </div>
-        {!!selectedNumbers.length && (
-          <div className="mt-2 flex flex-wrap gap-2 max-h-24 overflow-auto">
-            {selectedNumbers.slice().sort((a, b) => a - b).map(n => (
-              <span key={n} className="text-xs px-2 py-1 rounded-md bg-bg-secondary border border-border-light text-text-primary">#{n}</span>
-            ))}
-          </div>
-        )}
+        <p className="text-xs text-text-muted mt-2">
+          Los números de boletos se asignarán aleatoriamente al completar la compra
+        </p>
       </div>
 
       {/* Icono y mensaje */}

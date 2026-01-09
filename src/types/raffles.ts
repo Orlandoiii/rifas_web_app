@@ -37,7 +37,8 @@ export interface RaffleParticipant {
   name: string;
   email: string;
   phone: string;
-  ticketNumber: number[];
+  ticketNumber: number[];  // Puede estar vacío si el backend genera los números
+  ticketQuantity: number;  // Cantidad total de tickets que el usuario quiere comprar
 }
 
 export interface RaffleParticipantResponse {
