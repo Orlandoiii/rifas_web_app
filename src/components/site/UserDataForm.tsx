@@ -86,12 +86,12 @@ function validateEmail(email: string): string | null {
   return null;
 }
 
-export default function UserDataForm({ 
-  raffleTitle, 
-  price, 
+export default function UserDataForm({
+  raffleTitle,
+  price,
   currency,
-  buyer, 
-  onChange, 
+  buyer,
+  onChange,
   disabled = false,
   onClearData,
   hasStoredData = false,
@@ -102,7 +102,7 @@ export default function UserDataForm({
 }: UserDataFormProps) {
 
   const total = React.useMemo(() => (price || 0) * ticketQuantity, [price, ticketQuantity]);
-  
+
   const [errors, setErrors] = React.useState<{
     id?: string | null;
     name?: string | null;
@@ -110,7 +110,7 @@ export default function UserDataForm({
     email?: string | null;
     ticketQuantity?: string | null;
   }>({});
-  
+
   const [touched, setTouched] = React.useState<{
     id?: boolean;
     name?: boolean;
@@ -157,14 +157,14 @@ export default function UserDataForm({
   const isValid = React.useMemo(() => {
     const quantityError = validateTicketQuantity(ticketQuantity);
     return !errors.id && !errors.name && !errors.phone && !errors.email && !quantityError &&
-           buyer.id.trim() && buyer.name.trim() && buyer.phone.trim() && buyer.email.trim() &&
-           ticketQuantity > 0;
+      buyer.id.trim() && buyer.name.trim() && buyer.phone.trim() && buyer.email.trim() &&
+      ticketQuantity > 0;
   }, [errors, buyer, ticketQuantity, availableTicketsCount]);
 
   // Validar en tiempo real - solo mostrar errores si el campo fue touched O si ya se intentó hacer submit
   React.useEffect(() => {
     const newErrors: typeof errors & { ticketQuantity?: string | null } = {};
-    
+
     if (touched.id || (hasAttemptedSubmit && buyer.id)) {
       newErrors.id = validateId(buyer.id);
     }
@@ -180,13 +180,13 @@ export default function UserDataForm({
     if (touched.ticketQuantity || (hasAttemptedSubmit && ticketQuantity)) {
       newErrors.ticketQuantity = validateTicketQuantity(ticketQuantity);
     }
-    
+
     setErrors(newErrors);
   }, [buyer, touched, hasAttemptedSubmit, ticketQuantity, availableTicketsCount]);
 
   const handleField = (key: keyof Buyer) => (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
-    
+
     // Aplicar filtros según el campo
     if (key === 'name') {
       // Solo permitir letras, espacios y caracteres acentuados
@@ -203,7 +203,7 @@ export default function UserDataForm({
       // Solo números
       value = value.replace(/\D/g, '');
     }
-    
+
     onChange({ ...buyer, [key]: value });
     setTouched(prev => ({ ...prev, [key]: true }));
   };
@@ -233,17 +233,16 @@ export default function UserDataForm({
         </p>
       </div>
 
-      {/* Subtítulo explicativo */}
-      <div className="border-l-4 border-selected pl-4 py-2 bg-bg-secondary/50 rounded-r-lg">
+
+      {/* <div className="border-l-4 border-selected pl-4 py-2 bg-bg-secondary/50 rounded-r-lg">
         <h3 className="text-base font-semibold text-text-primary mb-1">
           Datos asociados a la rifa
         </h3>
         <p className="text-sm text-text-secondary">
           Esta información será utilizada para asociar la compra a tu nombre y será necesaria para reclamar premios.
         </p>
-      </div>
+      </div> */}
 
-      {/* Campo de cantidad de boletos */}
       <div>
         <Input
           label="Cantidad de Boletos"
@@ -274,8 +273,8 @@ export default function UserDataForm({
               Datos guardados de compras anteriores
             </span>
           </div>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={handleClearData}
             disabled={disabled}
             className="text-sm"

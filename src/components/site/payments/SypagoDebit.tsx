@@ -188,15 +188,14 @@ export default function SypagoDebit({ raffleTitle, price, currency, payload, onC
         </p>
       </div>
 
-      {/* Subtítulo explicativo */}
-      <div className="border-l-4 border-mint-main pl-4 py-2 bg-bg-secondary/50 rounded-r-lg">
+      {/* <div className="border-l-4 border-mint-main pl-4 py-2 bg-bg-secondary/50 rounded-r-lg">
         <h3 className="text-base font-semibold text-text-primary mb-1">
           Datos del pago únicamente
         </h3>
         <p className="text-sm text-text-secondary">
           Esta información es solo para procesar el pago. Los datos con los que se reclama la compra y se asocian a la rifa son los del formulario anterior.
         </p>
-      </div>
+      </div> */}
 
       {/* Formulario Sypago Debit */}
       <div className="space-y-3">
