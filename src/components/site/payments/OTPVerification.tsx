@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Button } from '../../lib/components/button';
 import { extractErrorMessage } from '../../../utils/errorMessages';
 import { useSypagoRejectCodes } from '../../../hooks/usePayments';
+import { useCoins } from '../../lib/context';
 
 interface OTPVerificationProps {
   raffleTitle: string;
@@ -33,7 +34,8 @@ export default function OTPVerification({
   const { data: rejectCodes = [] } = useSypagoRejectCodes();
 
   const total = React.useMemo(() => (price || 0) * ticketQuantity, [price, ticketQuantity]);
-
+  const { getCoinDisplayName } = useCoins();
+  const coinDisplayName = getCoinDisplayName(currency);
   // Función para obtener la descripción de un código de rechazo
   const getRejectCodeDescription = React.useCallback((rejectCode: string): string | null => {
     if (!rejectCode || !rejectCodes.length) return null;
@@ -168,7 +170,7 @@ export default function OTPVerification({
           <div className="text-text-primary font-semibold truncate">{raffleTitle}</div>
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="text-text-secondary">Cantidad: <span className="text-text-primary font-semibold">{ticketQuantity}</span></span>
-            <span className="text-text-secondary">Total: <span className="text-selected font-semibold">{total.toFixed(2)} {currency}</span></span>
+            <span className="text-text-secondary">Total: <span className="text-selected font-semibold">{total.toFixed(2)} {coinDisplayName}</span></span>
           </div>
         </div>
         <p className="text-xs text-text-muted mt-2">

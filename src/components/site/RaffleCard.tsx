@@ -3,6 +3,7 @@ import type { RaffleSummary } from '../../types/raffles';
 import { useCountdown } from './Hero';
 import { isRaffleFinished } from '../../utils/raffles';
 import { ACTIVATE_RAFFLE_TIME_COUNTER } from '../../config/raffleFeatures';
+import { useCoins } from '../lib/context';
 
 interface RaffleCardProps {
   raffle: RaffleSummary;
@@ -12,6 +13,7 @@ interface RaffleCardProps {
 }
 
 export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails, onVerify }: RaffleCardProps) {
+  const { getCoinDisplayName } = useCoins();
   const imgW = variant === 'single' ? 'w-[92vw] sm:w-[360px] md:w-[520px]' : 'w-[300px] md:w-[360px]';
   const imgH = variant === 'single' ? 'h-[60vw] sm:h-64 md:h-80' : 'h-52 md:h-64';
   const bodyW = variant === 'single' ? 'w-[92vw] sm:w-[360px] md:w-[520px]' : 'w-[300px] md:w-[360px]';
@@ -21,6 +23,8 @@ export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails,
   const timeLeft = ACTIVATE_RAFFLE_TIME_COUNTER ? useCountdown(r.endsAt) : '';
   const isFinished = isRaffleFinished(r);
 
+
+  const coinDisplayName = getCoinDisplayName(r.currency);
   return (
     <article className="bg-bg-secondary border border-border-light rounded-xl overflow-hidden shadow">
       <img src={r.coverImageUrl} alt={r.title} className={`${imgW} ${imgH} object-cover`} />
@@ -35,7 +39,7 @@ export default function RaffleCard({ raffle: r, variant = 'carousel', onDetails,
           </div>
         )}
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-selected font-semibold">{r.price.toFixed(2)} {r.currency}</span>
+          <span className="text-selected font-semibold">{r.price.toFixed(2)} {coinDisplayName}</span>
           {ACTIVATE_RAFFLE_TIME_COUNTER && (
             <span className="text-text-muted text-xs">Termina {new Date(r.endsAt).toLocaleDateString()}</span>
           )}

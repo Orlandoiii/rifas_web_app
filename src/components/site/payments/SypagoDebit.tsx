@@ -5,6 +5,7 @@ import { Button } from '../../lib/components/button';
 import { useBanks } from '../../../hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, X } from 'lucide-react';
+import { useCoins } from '../../lib/context';
 
 export type SypagoDebitPayload = {
   bankCode: string;
@@ -76,6 +77,9 @@ export default function SypagoDebit({ raffleTitle, price, currency, payload, onC
     { value: 'J', label: 'J - Jurídico' },
     { value: 'P', label: 'P - Pasaporte' }
   ], []);
+
+  const { getCoinDisplayName } = useCoins();
+  const coinDisplayName = getCoinDisplayName(currency);
 
   const isFormDisabled = disabled || loadingBanks || errorBanks;
   
@@ -180,7 +184,7 @@ export default function SypagoDebit({ raffleTitle, price, currency, payload, onC
           <div className="text-text-primary font-semibold truncate">{raffleTitle}</div>
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="text-text-secondary">Cantidad: <span className="text-text-primary font-semibold">{ticketQuantity}</span></span>
-            <span className="text-text-secondary">Total: <span className="text-selected font-semibold">{total.toFixed(2)} {currency}</span></span>
+            <span className="text-text-secondary">Total: <span className="text-selected font-semibold">{total.toFixed(2)} {coinDisplayName}</span></span>
           </div>
         </div>
         <p className="text-xs text-text-muted mt-2">

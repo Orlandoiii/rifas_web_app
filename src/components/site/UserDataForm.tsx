@@ -3,6 +3,7 @@ import { Input } from '../lib/components/input';
 import { Button } from '../lib/components/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, X } from 'lucide-react';
+import { useCoins } from '../lib/context';
 
 type Buyer = {
   id: string;
@@ -121,6 +122,9 @@ export default function UserDataForm({
 
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = React.useState(false);
 
+  const { getCoinDisplayName } = useCoins();
+
+
   // Registrar función de activación de validaciones con el stepper
   React.useEffect(() => {
     if (onSubmitAttempt) {
@@ -214,6 +218,7 @@ export default function UserDataForm({
     }
   };
 
+  const coinDisplayName = getCoinDisplayName(currency);
   return (
     <div className="space-y-4">
       <div className="bg-bg-tertiary/40 border border-border-light rounded-lg p-3">
@@ -224,7 +229,7 @@ export default function UserDataForm({
               <span className="text-text-primary font-semibold">{ticketQuantity}</span>
             </span>
             <span className="text-text-secondary">Total:
-              <span className="text-selected font-semibold">{total.toFixed(2)} {currency}</span>
+              <span className="text-selected font-semibold">{total.toFixed(2)} {coinDisplayName}</span>
             </span>
           </div>
         </div>

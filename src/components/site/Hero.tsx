@@ -5,6 +5,7 @@ import { useTheme } from '../../components/lib/components/theme';
 import type { RaffleSummary } from '../../types/raffles';
 import { isRaffleFinished } from '../../utils/raffles';
 import { ACTIVATE_RAFFLE_TIME_COUNTER } from '../../config/raffleFeatures';
+import { useCoins } from '../lib/context';
 
 
 function useResolvedTheme(theme: 'dark' | 'light' | 'system') {
@@ -65,6 +66,10 @@ function Chip({ children, className = '' }: { children: React.ReactNode; classNa
 
 function RaffleDetails({ raffle, timeLeft, onBuy, onVerify }: { raffle: RaffleSummary; timeLeft: string; onBuy: () => void; onVerify: () => void }) {
   const isFinished = isRaffleFinished(raffle);
+  const { getCoinDisplayName } = useCoins();
+
+
+  const coinDisplayName = getCoinDisplayName(raffle.currency);
 
   return (
     <div className="text-center">
@@ -73,7 +78,7 @@ function RaffleDetails({ raffle, timeLeft, onBuy, onVerify }: { raffle: RaffleSu
         {raffle.shortDescription}
       </p>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-4">
-        <Chip className="text-selected font-semibold text-base md:text-lg bg-bg-secondary/70 backdrop-blur-md">{raffle.price.toFixed(2)} {raffle.currency} / ticket</Chip>
+        <Chip className="text-selected font-semibold text-base md:text-lg bg-bg-secondary/70 backdrop-blur-md">{raffle.price.toFixed(2)} {coinDisplayName} / ticket</Chip>
         {ACTIVATE_RAFFLE_TIME_COUNTER && (
           <Chip className="text-text-primary text-sm md:text-base bg-bg-secondary/70 backdrop-blur-md">Finaliza en: <span className="font-semibold text-selected">{timeLeft}</span></Chip>
         )}
