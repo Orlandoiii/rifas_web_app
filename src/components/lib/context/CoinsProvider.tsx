@@ -25,7 +25,10 @@ type CoinsContextValue = {
 
 const CoinsContext = React.createContext<CoinsContextValue | null>(null);
 
-const COINS_URL = new URL('../../../assets/coins.json', import.meta.url).toString();
+// Se sirve desde /public, por lo tanto existe como archivo real en build:
+// - dev: /assets/coins.json
+// - prod: <BASE_URL>/assets/coins.json
+const COINS_URL = `${import.meta.env.BASE_URL}assets/coins.json`;
 
 export function CoinsProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = React.useState(true);

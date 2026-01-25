@@ -1,0 +1,13 @@
+{
+  "coins": [
+    {
+      "code": "BTC",
+      "display_name": "Bitcoin"
+    },
+    {
+      "name": "VES",
+      "display_name": "Bolívares"
+    }
+  ]
+}
+
